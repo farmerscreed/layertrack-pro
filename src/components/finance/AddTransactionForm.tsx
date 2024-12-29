@@ -69,7 +69,12 @@ export function AddTransactionForm() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="md:h-10 md:px-4 md:py-2 h-8 px-3">Add Transaction</Button>
+        <Button 
+          size="sm" 
+          className="fixed md:static top-4 right-4 z-50 md:z-0 h-8 px-3 md:h-10 md:px-4 md:py-2"
+        >
+          Add Transaction
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

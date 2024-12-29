@@ -55,7 +55,12 @@ export function AddStaffForm() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Add Staff Member</Button>
+        <Button 
+          size="sm" 
+          className="fixed md:static top-4 right-4 z-50 md:z-0 h-8 px-3 md:h-10 md:px-4 md:py-2"
+        >
+          Add Staff
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

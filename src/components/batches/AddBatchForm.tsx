@@ -18,50 +18,35 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
 const formSchema = z.object({
-  batchId: z.string().min(3, "Batch ID must be at least 3 characters"),
-  breed: z.string().min(2, "Please select a breed"),
-  count: z.coerce.number().min(1, "Count must be at least 1"),
-  acquisitionDate: z.string(),
-  source: z.string().min(2, "Source must be at least 2 characters"),
-  initialCost: z.coerce.number().min(0, "Initial cost must be non-negative"),
+  name: z.string().min(2, "Name is required"),
+  quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
+  description: z.string().optional(),
 });
-
-type FormValues = z.infer<typeof formSchema>;
 
 export function AddBatchForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<FormValues>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      batchId: "",
-      breed: "",
-      count: 0,
-      acquisitionDate: new Date().toISOString().split("T")[0],
-      source: "",
-      initialCost: 0,
+      name: "",
+      quantity: 1,
+      description: "",
     },
   });
 
-  function onSubmit(values: FormValues) {
+  function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
     toast({
-      title: "Batch Added Successfully",
-      description: `Batch ${values.batchId} has been created.`,
+      title: "Batch Added",
+      description: `Added batch: ${values.name} with quantity: ${values.quantity}.`,
     });
     setOpen(false);
     form.reset();
@@ -70,27 +55,28 @@ export function AddBatchForm() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-all duration-300">
-          Add New Batch
+        <Button 
+          size="sm" 
+          className="fixed md:static top-4 right-4 z-50 md:z-0 h-8 px-3 md:h-10 md:px-4 md:py-2"
+        >
+          Add Batch
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-white/80 backdrop-blur-lg border border-white/20">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Batch</DialogTitle>
-          <DialogDescription>
-            Enter the details for the new batch of birds.
-          </DialogDescription>
+          <DialogTitle>Add Batch</DialogTitle>
+          <DialogDescription>Record a new batch of items.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="batchId"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Batch ID</FormLabel>
+                  <FormLabel>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="BAT001" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -98,56 +84,12 @@ export function AddBatchForm() {
             />
             <FormField
               control={form.control}
-              name="breed"
+              name="quantity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Breed</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select breed" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="isa-brown">Isa Brown</SelectItem>
-                      <SelectItem value="lohmann-brown">Lohmann Brown</SelectItem>
-                      <SelectItem value="hy-line-brown">Hy-Line Brown</SelectItem>
-                      <SelectItem value="novogen-brown">Novogen Brown</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="count"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bird Count</FormLabel>
+                  <FormLabel>Quantity</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      placeholder="5000" 
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Enter the total number of birds in this batch
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="acquisitionDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Acquisition Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -155,37 +97,18 @@ export function AddBatchForm() {
             />
             <FormField
               control={form.control}
-              name="source"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Source</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="Supplier name" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="initialCost"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Initial Cost</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01" 
-                      placeholder="0.00" 
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full">Submit</Button>
+            <Button type="submit">Submit</Button>
           </form>
         </Form>
       </DialogContent>
