@@ -4,7 +4,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Area, AreaChart, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, XAxis, YAxis, Tooltip } from "recharts";
 
 const data = [
   { month: "Jan", revenue: 4000, expenses: 2400 },
@@ -117,9 +117,7 @@ const Analytics = () => {
                   axisLine={false}
                   tickFormatter={(value) => `$${value}`}
                 />
-                <ChartTooltip>
-                  <ChartTooltipContent />
-                </ChartTooltip>
+                <Tooltip content={<ChartTooltipContent />} />
                 <Area
                   type="monotone"
                   dataKey="revenue"
