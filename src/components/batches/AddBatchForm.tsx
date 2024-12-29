@@ -33,30 +33,31 @@ import * as z from "zod";
 const formSchema = z.object({
   batchId: z.string().min(3, "Batch ID must be at least 3 characters"),
   breed: z.string().min(2, "Please select a breed"),
-  count: z.string().transform((val) => parseInt(val, 10)),
+  count: z.coerce.number().min(1, "Count must be at least 1"),
   acquisitionDate: z.string(),
   source: z.string().min(2, "Source must be at least 2 characters"),
-  initialCost: z.string().transform((val) => parseFloat(val)),
+  initialCost: z.coerce.number().min(0, "Initial cost must be non-negative"),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function AddBatchForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       batchId: "",
       breed: "",
-      count: "",
+      count: 0,
       acquisitionDate: new Date().toISOString().split("T")[0],
       source: "",
-      initialCost: "",
+      initialCost: 0,
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Here you would typically send this data to your backend
+  function onSubmit(values: FormValues) {
     console.log(values);
     toast({
       title: "Batch Added Successfully",
@@ -125,7 +126,12 @@ export function AddBatchForm() {
                 <FormItem>
                   <FormLabel>Bird Count</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="5000" {...field} />
+                    <Input 
+                      type="number" 
+                      placeholder="5000" 
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    />
                   </FormControl>
                   <FormDescription>
                     Enter the total number of birds in this batch
@@ -167,7 +173,13 @@ export function AddBatchForm() {
                 <FormItem>
                   <FormLabel>Initial Cost</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      placeholder="0.00" 
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
