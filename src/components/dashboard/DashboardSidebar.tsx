@@ -91,7 +91,7 @@ export function DashboardSidebar() {
                   isActive={location.pathname === item.url}
                   onClick={() => setIsOpen(false)}
                 >
-                  <Link to={item.url}>
+                  <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
                   </Link>
@@ -140,7 +140,12 @@ export function DashboardSidebar() {
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <Sidebar>
+        <Sidebar className="border-r border-white/10 bg-gradient-to-br from-primary/5 via-background to-secondary/5 backdrop-blur-xl">
+          <div className="p-6 border-b border-white/10">
+            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-accent">
+              Farm Manager
+            </h2>
+          </div>
           <MenuContent />
         </Sidebar>
       </div>
