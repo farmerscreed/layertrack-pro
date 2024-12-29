@@ -11,84 +11,101 @@ import {
 
 const Dashboard = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+          Dashboard Overview
+        </h1>
         <p className="text-muted-foreground">
           Welcome back! Here's an overview of your farm.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Birds"
-          value="5,234"
-          trend="+2.5%"
-          trendUp={true}
-          icon={Bird}
-          description="Active birds in all batches"
-        />
-        <MetricCard
-          title="Daily Production"
-          value="4,721"
-          trend="-1.2%"
-          trendUp={false}
-          icon={Egg}
-          description="Eggs collected today"
-        />
-        <MetricCard
-          title="Feed Stock"
-          value="12.5t"
-          trend="Low"
-          trendUp={false}
-          icon={ShoppingCart}
-          description="Current feed inventory"
-        />
-        <MetricCard
-          title="Active Alerts"
-          value="3"
-          trend="New"
-          trendUp={false}
-          icon={AlertTriangle}
-          description="Requires attention"
-        />
+        <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent hover:shadow-lg transition-all duration-300 border border-white/20 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Birds</CardTitle>
+            <Bird className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">5,234</div>
+            <div className="flex items-center text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
+              <span className="text-green-500">+2.5%</span> vs last month
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-secondary/10 via-secondary/5 to-transparent hover:shadow-lg transition-all duration-300 border border-white/20 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Daily Production</CardTitle>
+            <Egg className="h-4 w-4 text-secondary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">4,721</div>
+            <div className="flex items-center text-xs text-muted-foreground">
+              <ArrowDownRight className="h-3 w-3 text-red-500 mr-1" />
+              <span className="text-red-500">-1.2%</span> vs yesterday
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-accent/10 via-accent/5 to-transparent hover:shadow-lg transition-all duration-300 border border-white/20 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Feed Stock</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">12.5t</div>
+            <p className="text-xs text-muted-foreground">Current feed inventory</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent hover:shadow-lg transition-all duration-300 border border-white/20 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">Requires attention</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
           <CardHeader>
-            <CardTitle>Production Trends</CardTitle>
+            <CardTitle className="text-xl font-semibold">Production Trends</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Production chart will go here */}
-            <div className="h-[300px] flex items-center justify-center border-2 border-dashed rounded-lg">
+            <div className="h-[300px] flex items-center justify-center border border-white/10 rounded-lg bg-gradient-to-br from-white/5 to-transparent">
               Production Chart Placeholder
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="backdrop-blur-sm bg-white/10 border border-white/20">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Activity items will go here */}
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-transparent hover:from-primary/10 transition-colors">
                 <div className="h-2 w-2 rounded-full bg-primary" />
                 <div>
                   <p className="font-medium">Batch #123 Health Check Complete</p>
                   <p className="text-sm text-muted-foreground">2 hours ago</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-secondary/5 to-transparent hover:from-secondary/10 transition-colors">
                 <div className="h-2 w-2 rounded-full bg-secondary" />
                 <div>
                   <p className="font-medium">Feed Stock Updated</p>
                   <p className="text-sm text-muted-foreground">4 hours ago</p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-gradient-to-r from-accent/5 to-transparent hover:from-accent/10 transition-colors">
                 <div className="h-2 w-2 rounded-full bg-accent" />
                 <div>
                   <p className="font-medium">Daily Production Recorded</p>
@@ -100,49 +117,6 @@ const Dashboard = () => {
         </Card>
       </div>
     </div>
-  );
-};
-
-const MetricCard = ({
-  title,
-  value,
-  trend,
-  trendUp,
-  icon: Icon,
-  description,
-}: {
-  title: string;
-  value: string;
-  trend: string;
-  trendUp: boolean;
-  icon: any;
-  description: string;
-}) => {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <div className="flex items-center space-x-2">
-          <p className="text-xs text-muted-foreground">{description}</p>
-          <span
-            className={`flex items-center text-xs ${
-              trendUp ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            {trendUp ? (
-              <ArrowUpRight className="h-3 w-3" />
-            ) : (
-              <ArrowDownRight className="h-3 w-3" />
-            )}
-            {trend}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
   );
 };
 
