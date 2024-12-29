@@ -1,129 +1,49 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
-
-const staffFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  position: z.string().min(2, {
-    message: "Position must be at least 2 characters.",
-  }),
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  phone: z.string().min(10, {
-    message: "Phone number must be at least 10 characters.",
-  }),
-});
+import { AddStaffForm } from "@/components/staff/AddStaffForm";
 
 const Staff = () => {
-  const form = useForm<z.infer<typeof staffFormSchema>>({
-    resolver: zodResolver(staffFormSchema),
-    defaultValues: {
-      name: "",
-      position: "",
-      email: "",
-      phone: "",
-    },
-  });
-
-  function onSubmit(values: z.infer<typeof staffFormSchema>) {
-    toast({
-      title: "Staff member added",
-      description: "The staff member has been successfully added.",
-    });
-    console.log(values);
-    form.reset();
-  }
-
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Staff Management</h1>
-        <p className="text-muted-foreground">
-          Manage staff profiles and assignments
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Staff Management</h1>
+          <p className="text-muted-foreground">
+            Manage staff profiles and assignments
+          </p>
+        </div>
+        <AddStaffForm />
       </div>
 
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Add New Staff Member</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="position"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Position</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Farm Manager" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="john@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+1234567890" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit">Add Staff Member</Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Role-Based Access Control (RBAC)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold mb-2">Administrator</h3>
+              <p className="text-sm text-muted-foreground">
+                Full access to all system features including staff management, financial records, and system settings.
+                Can manage user roles and permissions.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Farm Manager</h3>
+              <p className="text-sm text-muted-foreground">
+                Can manage daily operations including production records, feed inventory, and health records.
+                Has view-only access to financial data and analytics.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2">Farm Worker</h3>
+              <p className="text-sm text-muted-foreground">
+                Can record daily activities such as egg collection, feed distribution, and basic health observations.
+                Limited to data entry and viewing assigned tasks.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShoppingCart, Package, TrendingDown, AlertTriangle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AddFeedForm } from "@/components/feed/AddFeedForm";
 
 const feedData = [
   { date: "2024-02-01", consumption: 450, stock: 2500, cost: 1200 },
@@ -14,13 +15,16 @@ const feedData = [
 const Feed = () => {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-          Feed Management
-        </h1>
-        <p className="text-muted-foreground">
-          Track feed inventory and consumption
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+            Feed Management
+          </h1>
+          <p className="text-muted-foreground">
+            Track feed inventory and consumption
+          </p>
+        </div>
+        <AddFeedForm />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

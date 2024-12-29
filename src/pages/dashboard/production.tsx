@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Egg, TrendingUp } from "lucide-react";
+import { AddEggCollectionForm } from "@/components/production/AddEggCollectionForm";
 
 const productionData = [
   { date: "2024-02-01", total: 4500, gradeA: 3800, gradeB: 500, gradeC: 200 },
@@ -23,11 +24,14 @@ const productionData = [
 const Production = () => {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold">Production Tracking</h1>
-        <p className="text-muted-foreground">
-          Monitor and record daily egg production
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Production Tracking</h1>
+          <p className="text-muted-foreground">
+            Monitor and record daily egg production
+          </p>
+        </div>
+        <AddEggCollectionForm />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

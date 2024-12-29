@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DollarSign, TrendingUp, PieChart, Wallet } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AddTransactionForm } from "@/components/finance/AddTransactionForm";
 
 const financeData = [
   { date: "2024-02-01", revenue: 12500, expenses: 8500, profit: 4000 },
@@ -14,13 +15,16 @@ const financeData = [
 const Finance = () => {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-          Financial Management
-        </h1>
-        <p className="text-muted-foreground">
-          Track income, expenses, and financial analytics
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+            Financial Management
+          </h1>
+          <p className="text-muted-foreground">
+            Track income, expenses, and financial analytics
+          </p>
+        </div>
+        <AddTransactionForm />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
