@@ -4,6 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
+import Dashboard from "./pages/dashboard";
+import DashboardLayout from "./layouts/DashboardLayout";
+import Batches from "./pages/dashboard/batches";
+import Production from "./pages/dashboard/production";
+import Health from "./pages/dashboard/health";
+import Feed from "./pages/dashboard/feed";
+import Finance from "./pages/dashboard/finance";
+import Staff from "./pages/dashboard/staff";
+import Settings from "./pages/dashboard/settings";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +24,16 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="batches" element={<Batches />} />
+            <Route path="production" element={<Production />} />
+            <Route path="health" element={<Health />} />
+            <Route path="feed" element={<Feed />} />
+            <Route path="finance" element={<Finance />} />
+            <Route path="staff" element={<Staff />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
