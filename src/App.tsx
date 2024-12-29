@@ -13,6 +13,7 @@ import Feed from "./pages/dashboard/feed";
 import Finance from "./pages/dashboard/finance";
 import Staff from "./pages/dashboard/staff";
 import Settings from "./pages/dashboard/settings";
+import Analytics from "./pages/dashboard/analytics";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="finance" element={<Finance />} />
             <Route path="staff" element={<Staff />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="analytics" element={<Analytics />} />
           </Route>
         </Routes>
       </BrowserRouter>

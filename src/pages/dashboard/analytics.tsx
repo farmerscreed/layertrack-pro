@@ -1,10 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Area, AreaChart, XAxis, YAxis, Tooltip } from "recharts";
 import {
   ChartContainer,
-  ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Area, AreaChart, XAxis, YAxis, Tooltip } from "recharts";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/use-toast";
 
 const data = [
   { month: "Jan", revenue: 4000, expenses: 2400 },
@@ -43,11 +56,36 @@ const metrics = [
   },
 ];
 
+const analyticsFormSchema = z.object({
+  reportingPeriod: z.string().min(1, {
+    message: "Please select a reporting period.",
+  }),
+  alertThreshold: z.string().min(1, {
+    message: "Please set an alert threshold.",
+  }),
+});
+
 const Analytics = () => {
+  const form = useForm<z.infer<typeof analyticsFormSchema>>({
+    resolver: zodResolver(analyticsFormSchema),
+    defaultValues: {
+      reportingPeriod: "monthly",
+      alertThreshold: "10",
+    },
+  });
+
+  function onSubmit(values: z.infer<typeof analyticsFormSchema>) {
+    toast({
+      title: "Analytics settings updated",
+      description: "Your analytics preferences have been saved.",
+    });
+    console.log(values);
+  }
+
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1>Analytics Overview</h1>
+        <h1 className="text-3xl font-bold">Analytics Overview</h1>
         <p className="text-muted-foreground">
           Track your farm's performance metrics and trends
         </p>
@@ -136,6 +174,45 @@ const Analytics = () => {
                 />
               </AreaChart>
             </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-2">
+          <CardHeader>
+            <CardTitle>Analytics Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="reportingPeriod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reporting Period</FormLabel>
+                      <FormControl>
+                        <Input placeholder="monthly" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="alertThreshold"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Alert Threshold (%)</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit">Update Settings</Button>
+              </form>
+            </Form>
           </CardContent>
         </Card>
       </div>
