@@ -5,7 +5,7 @@ import { ArrowRight, Lock, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,11 +15,23 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate('/dashboard');
       }
     });
+
+    // Set up auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        navigate('/dashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -27,18 +39,31 @@ const Login = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      console.log("Attempting login with:", { email }); // Debug log
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(), // Normalize email
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error); // Debug log
+        throw error;
+      }
 
-      navigate('/dashboard');
+      if (data?.user) {
+        console.log("Login successful:", data.user); // Debug log
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        });
+        navigate('/dashboard');
+      }
     } catch (error: any) {
+      console.error("Login error details:", error); // Debug log
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Login failed",
+        description: error.message || "Please check your email and password and try again.",
         variant: "destructive",
       });
     } finally {
