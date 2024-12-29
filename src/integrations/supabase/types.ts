@@ -9,7 +9,200 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      batches: {
+        Row: {
+          arrival_date: string
+          breed: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          quantity: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          arrival_date: string
+          breed?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          quantity: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          arrival_date?: string
+          breed?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          quantity?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batches_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      egg_production: {
+        Row: {
+          batch_id: string
+          collection_date: string
+          created_at: string
+          damaged: number | null
+          id: string
+          notes: string | null
+          quantity: number
+        }
+        Insert: {
+          batch_id: string
+          collection_date: string
+          created_at?: string
+          damaged?: number | null
+          id?: string
+          notes?: string | null
+          quantity: number
+        }
+        Update: {
+          batch_id?: string
+          collection_date?: string
+          created_at?: string
+          damaged?: number | null
+          id?: string
+          notes?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "egg_production_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feed_inventory: {
+        Row: {
+          cost_per_kg: number | null
+          created_at: string
+          feed_type: string
+          id: string
+          notes: string | null
+          purchase_date: string
+          quantity_kg: number
+          supplier: string | null
+          user_id: string
+        }
+        Insert: {
+          cost_per_kg?: number | null
+          created_at?: string
+          feed_type: string
+          id?: string
+          notes?: string | null
+          purchase_date: string
+          quantity_kg: number
+          supplier?: string | null
+          user_id: string
+        }
+        Update: {
+          cost_per_kg?: number | null
+          created_at?: string
+          feed_type?: string
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          quantity_kg?: number
+          supplier?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_inventory_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_records: {
+        Row: {
+          batch_id: string
+          cost: number | null
+          created_at: string
+          description: string
+          id: string
+          notes: string | null
+          record_date: string
+          record_type: string
+        }
+        Insert: {
+          batch_id: string
+          cost?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          notes?: string | null
+          record_date: string
+          record_type: string
+        }
+        Update: {
+          batch_id?: string
+          cost?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          record_date?: string
+          record_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_records_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
