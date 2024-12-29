@@ -107,7 +107,7 @@ export function DashboardSidebar() {
   return (
     <>
       {/* Mobile Menu */}
-      <div className="fixed top-4 left-4 z-50 md:hidden">
+      <div className="fixed top-6 left-4 z-50 md:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button
