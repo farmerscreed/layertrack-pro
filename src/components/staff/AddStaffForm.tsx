@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { roles } from "./staffConfig";
 import { StaffFormFields } from "./StaffFormFields";
+import { UserPlus } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -57,12 +58,13 @@ export function AddStaffForm() {
       <DialogTrigger asChild>
         <Button 
           size="sm" 
-          className="fixed md:static top-4 right-4 z-50 md:z-0 h-8 px-3 md:h-10 md:px-4 md:py-2"
+          className="fixed md:static top-4 right-4 z-50 md:z-0 h-8 px-3 md:h-10 md:px-4 md:py-2 bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90"
         >
+          <UserPlus className="mr-2 h-4 w-4" />
           Add Staff
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px] bg-gradient-to-br from-background via-background to-background/95 backdrop-blur-xl border border-white/20">
         <DialogHeader>
           <DialogTitle>Add Staff Member</DialogTitle>
           <DialogDescription>
@@ -72,7 +74,12 @@ export function AddStaffForm() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <StaffFormFields form={form} />
-            <Button type="submit">Add Staff Member</Button>
+            <Button 
+              type="submit"
+              className="w-full bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90"
+            >
+              Add Staff Member
+            </Button>
           </form>
         </Form>
       </DialogContent>

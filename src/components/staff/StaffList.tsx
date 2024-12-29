@@ -8,13 +8,14 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { mockStaffData, roles } from "./staffConfig";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function StaffList() {
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border border-white/10">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="hover:bg-white/5">
             <TableHead>Name</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Department</TableHead>
@@ -24,8 +25,16 @@ export function StaffList() {
         </TableHeader>
         <TableBody>
           {mockStaffData.map((staff) => (
-            <TableRow key={staff.id}>
-              <TableCell className="font-medium">{staff.name}</TableCell>
+            <TableRow key={staff.id} className="hover:bg-white/5">
+              <TableCell>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={`https://avatar.vercel.sh/${staff.email}`} />
+                    <AvatarFallback>{staff.name.substring(0, 2)}</AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium">{staff.name}</span>
+                </div>
+              </TableCell>
               <TableCell>
                 <Badge
                   variant={
@@ -35,6 +44,7 @@ export function StaffList() {
                       ? "default"
                       : "secondary"
                   }
+                  className="bg-opacity-15 hover:bg-opacity-25"
                 >
                   {roles[staff.role].title}
                 </Badge>

@@ -1,21 +1,59 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddStaffForm } from "@/components/staff/AddStaffForm";
 import { StaffList } from "@/components/staff/StaffList";
+import { Users, ShieldCheck, UserPlus } from "lucide-react";
 
 const Staff = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Staff Management</h1>
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-accent">
+            Staff Management
+          </h1>
           <p className="text-muted-foreground">
-            Manage staff profiles and assignments
+            Manage staff profiles and role-based permissions
           </p>
         </div>
         <AddStaffForm />
       </div>
 
-      <Card>
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-white/20 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
+            <Users className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">12</div>
+            <p className="text-xs text-muted-foreground">Active members</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-secondary/10 via-secondary/5 to-transparent border border-white/20 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">New This Month</CardTitle>
+            <UserPlus className="h-4 w-4 text-secondary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">3</div>
+            <p className="text-xs text-muted-foreground">Recent additions</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-accent/10 via-accent/5 to-transparent border border-white/20 backdrop-blur-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Active Roles</CardTitle>
+            <ShieldCheck className="h-4 w-4 text-accent" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">4</div>
+            <p className="text-xs text-muted-foreground">Permission levels</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border border-white/20 backdrop-blur-sm bg-white/5">
         <CardHeader>
           <CardTitle>Current Staff Members</CardTitle>
         </CardHeader>
@@ -24,34 +62,40 @@ const Staff = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border border-white/20 backdrop-blur-sm bg-white/5">
         <CardHeader>
           <CardTitle>Role-Based Access Control (RBAC)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-semibold mb-2">Administrator</h3>
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="space-y-2 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-transparent hover:from-primary/10 transition-colors">
+              <h3 className="font-semibold flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-primary" />
+                Administrator
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Full access to all system features including staff management,
-                financial records, and system settings. Can manage user roles and
-                permissions.
+                financial records, and system settings.
               </p>
             </div>
-            <div>
-              <h3 className="font-semibold mb-2">Farm Manager</h3>
+            <div className="space-y-2 p-4 rounded-lg bg-gradient-to-r from-secondary/5 to-transparent hover:from-secondary/10 transition-colors">
+              <h3 className="font-semibold flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-secondary" />
+                Farm Manager
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Can manage daily operations including production records, feed
-                inventory, and health records. Has view-only access to financial
-                data and analytics.
+                inventory, and health records.
               </p>
             </div>
-            <div>
-              <h3 className="font-semibold mb-2">Farm Worker</h3>
+            <div className="space-y-2 p-4 rounded-lg bg-gradient-to-r from-accent/5 to-transparent hover:from-accent/10 transition-colors">
+              <h3 className="font-semibold flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-accent" />
+                Farm Worker
+              </h3>
               <p className="text-sm text-muted-foreground">
                 Can record daily activities such as egg collection, feed
-                distribution, and basic health observations. Limited to data entry
-                and viewing assigned tasks.
+                distribution, and basic health observations.
               </p>
             </div>
           </div>
