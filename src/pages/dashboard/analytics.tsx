@@ -15,27 +15,30 @@ const data = [
 const metrics = [
   {
     title: "Total Revenue",
-    value: "$24,563",
+    value: 24563,
     change: "+12.5%",
     trend: "up",
+    isCurrency: true,
   },
   {
     title: "Active Batches",
-    value: "45",
+    value: 45,
     change: "+3.2%",
     trend: "up",
   },
   {
     title: "Feed Consumption",
-    value: "2,341 kg",
+    value: 2341,
     change: "-0.8%",
     trend: "down",
+    unit: "kg",
   },
   {
     title: "Mortality Rate",
-    value: "1.2%",
+    value: 1.2,
     change: "-0.3%",
     trend: "down",
+    unit: "%",
   },
 ] as const;
 

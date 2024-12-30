@@ -7,10 +7,28 @@ interface MetricCardProps {
   change: string;
   trend: "up" | "down";
   isCurrency?: boolean;
+  unit?: string;
 }
 
-export const MetricCard = ({ title, value, change, trend, isCurrency = false }: MetricCardProps) => {
+export const MetricCard = ({ 
+  title, 
+  value, 
+  change, 
+  trend, 
+  isCurrency = false,
+  unit
+}: MetricCardProps) => {
   const { formatCurrency } = useCurrency();
+
+  const formatValue = () => {
+    if (isCurrency) {
+      return formatCurrency(value);
+    }
+    if (unit) {
+      return `${value}${unit}`;
+    }
+    return value;
+  };
 
   return (
     <Card className="bg-gradient-to-br from-white/10 via-white/5 to-transparent hover:shadow-lg transition-all duration-300 border border-white/20 backdrop-blur-sm">
@@ -28,9 +46,9 @@ export const MetricCard = ({ title, value, change, trend, isCurrency = false }: 
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">
-          {isCurrency ? formatCurrency(value) : value}
+          {formatValue()}
         </div>
       </CardContent>
     </Card>
   );
-}
+};
