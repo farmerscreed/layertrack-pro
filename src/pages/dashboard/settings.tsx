@@ -39,28 +39,28 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="flex flex-wrap w-full gap-2 bg-transparent">
+        <TabsList className="flex flex-nowrap w-full gap-2 bg-transparent overflow-x-auto pb-2 md:pb-0 md:flex-wrap scrollbar-hide">
           <TabsTrigger 
             value="general"
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap flex-shrink-0"
           >
             General
           </TabsTrigger>
           <TabsTrigger 
             value="notifications"
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap flex-shrink-0"
           >
             Notifications
           </TabsTrigger>
           <TabsTrigger 
             value="farm"
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap flex-shrink-0"
           >
             Farm Profile
           </TabsTrigger>
           <TabsTrigger 
             value="security"
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap flex-shrink-0"
           >
             Security
           </TabsTrigger>
