@@ -30,27 +30,47 @@ const Settings = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+        <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
           Settings
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-sm md:text-base text-muted-foreground">
           Manage your account preferences and farm settings
         </p>
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="farm">Farm Profile</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+        <TabsList className="flex flex-wrap w-full gap-2 bg-transparent">
+          <TabsTrigger 
+            value="general"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+          >
+            General
+          </TabsTrigger>
+          <TabsTrigger 
+            value="notifications"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+          >
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger 
+            value="farm"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+          >
+            Farm Profile
+          </TabsTrigger>
+          <TabsTrigger 
+            value="security"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
+          >
+            Security
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general">
+        <TabsContent value="general" className="mt-6">
           <AppearanceSettings darkMode={darkMode} setDarkMode={setDarkMode} />
         </TabsContent>
 
-        <TabsContent value="notifications">
+        <TabsContent value="notifications" className="mt-6">
           <NotificationSettings
             emailNotifications={emailNotifications}
             setEmailNotifications={setEmailNotifications}
@@ -61,16 +81,16 @@ const Settings = () => {
           />
         </TabsContent>
 
-        <TabsContent value="farm">
+        <TabsContent value="farm" className="mt-6">
           <FarmSettings />
         </TabsContent>
 
-        <TabsContent value="security">
+        <TabsContent value="security" className="mt-6">
           <SecuritySettings />
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-between">
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
         <Button variant="destructive" onClick={handleSignOut}>
           Sign Out
         </Button>

@@ -24,14 +24,16 @@ const productionData = [
 const Production = () => {
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-3xl font-bold">Production Tracking</h1>
           <p className="text-muted-foreground">
             Monitor and record daily egg production
           </p>
         </div>
-        <AddEggCollectionForm />
+        <div className="flex justify-end">
+          <AddEggCollectionForm />
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
