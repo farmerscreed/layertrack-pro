@@ -13,7 +13,7 @@ const DashboardLayout = () => {
         <main className="flex-1 overflow-auto">
           <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-border/40">
             <div className="container flex flex-col gap-4 py-4">
-              <div className="w-full text-right order-1">
+              <div className="w-full text-left order-1">
                 <div className="text-sm">
                   Welcome, <span className="font-semibold">{session?.user?.email}</span>
                 </div>

@@ -14,8 +14,29 @@ const Settings = () => {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [mobileAlerts, setMobileAlerts] = useState(true);
 
-  const handleSaveSettings = () => {
-    toast.success("Settings saved successfully");
+  const handleSaveSettings = async () => {
+    try {
+      // Save notification preferences to user profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          email_notifications: emailNotifications,
+          push_notifications: pushNotifications,
+          mobile_alerts: mobileAlerts
+        })
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+      if (error) throw error;
+      
+      // Toggle dark mode
+      document.documentElement.classList.toggle('dark', darkMode);
+      localStorage.setItem('darkMode', String(darkMode));
+      
+      toast.success("Settings saved successfully");
+    } catch (error) {
+      toast.error("Error saving settings");
+      console.error(error);
+    }
   };
 
   const handleSignOut = async () => {
@@ -39,28 +60,28 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="flex flex-nowrap w-full gap-2 bg-transparent overflow-x-auto pb-2 md:pb-0 md:flex-wrap scrollbar-hide">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full gap-2 bg-transparent p-2">
           <TabsTrigger 
             value="general"
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap flex-shrink-0"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
             General
           </TabsTrigger>
           <TabsTrigger 
             value="notifications"
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap flex-shrink-0"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
             Notifications
           </TabsTrigger>
           <TabsTrigger 
             value="farm"
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap flex-shrink-0"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
             Farm Profile
           </TabsTrigger>
           <TabsTrigger 
             value="security"
-            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary whitespace-nowrap flex-shrink-0"
+            className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
           >
             Security
           </TabsTrigger>
