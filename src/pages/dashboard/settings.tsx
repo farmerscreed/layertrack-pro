@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -14,9 +14,43 @@ const Settings = () => {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [mobileAlerts, setMobileAlerts] = useState(true);
 
+  // Load user preferences on mount
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email_notifications, push_notifications, mobile_alerts')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          setEmailNotifications(profile.email_notifications ?? true);
+          setPushNotifications(profile.push_notifications ?? true);
+          setMobileAlerts(profile.mobile_alerts ?? true);
+        }
+
+        // Load dark mode preference from localStorage
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        setDarkMode(savedDarkMode);
+        document.documentElement.classList.toggle('dark', savedDarkMode);
+      } catch (error) {
+        console.error('Error loading preferences:', error);
+        toast.error("Failed to load preferences");
+      }
+    };
+
+    loadUserPreferences();
+  }, []);
+
   const handleSaveSettings = async () => {
     try {
-      // Save notification preferences to user profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user found');
+
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -24,7 +58,7 @@ const Settings = () => {
           push_notifications: pushNotifications,
           mobile_alerts: mobileAlerts
         })
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('id', user.id);
 
       if (error) throw error;
       
@@ -34,8 +68,8 @@ const Settings = () => {
       
       toast.success("Settings saved successfully");
     } catch (error) {
+      console.error('Error saving settings:', error);
       toast.error("Error saving settings");
-      console.error(error);
     }
   };
 
@@ -44,6 +78,7 @@ const Settings = () => {
       await supabase.auth.signOut();
       toast.success("Signed out successfully");
     } catch (error) {
+      console.error('Error signing out:', error);
       toast.error("Error signing out");
     }
   };
@@ -60,7 +95,7 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full gap-2 bg-transparent p-2">
+        <TabsList className="w-full md:w-auto grid grid-cols-2 md:inline-flex gap-2 bg-transparent p-2">
           <TabsTrigger 
             value="general"
             className="data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
