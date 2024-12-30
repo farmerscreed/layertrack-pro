@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { supabase } from "@/integrations/supabase/client";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { useEffect, useState } from "react";
 import Landing from "./pages/Landing";
 import Login from "./pages/auth/Login";
@@ -57,35 +58,37 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <SessionContextProvider supabaseClient={supabase}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="batches" element={<Batches />} />
-              <Route path="production" element={<Production />} />
-              <Route path="health" element={<Health />} />
-              <Route path="feed" element={<Feed />} />
-              <Route path="finance" element={<Finance />} />
-              <Route path="staff" element={<Staff />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="analytics" element={<Analytics />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <CurrencyProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="batches" element={<Batches />} />
+                <Route path="production" element={<Production />} />
+                <Route path="health" element={<Health />} />
+                <Route path="feed" element={<Feed />} />
+                <Route path="finance" element={<Finance />} />
+                <Route path="staff" element={<Staff />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="analytics" element={<Analytics />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CurrencyProvider>
     </SessionContextProvider>
   </QueryClientProvider>
 );

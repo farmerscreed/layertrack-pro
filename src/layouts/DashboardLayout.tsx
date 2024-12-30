@@ -13,13 +13,13 @@ const DashboardLayout = () => {
         <main className="flex-1 overflow-auto">
           <div className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-sm border-b border-border/40">
             <div className="container flex flex-col gap-4 py-4">
-              <div className="w-full text-left order-1">
-                <div className="text-sm">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="text-sm pl-14 md:pl-0">
                   Welcome, <span className="font-semibold">{session?.user?.email}</span>
                 </div>
-              </div>
-              <div className="flex items-center w-full justify-between gap-4 order-2">
-                {/* Action buttons will be rendered here by child components */}
+                <div className="w-full md:w-auto">
+                  {/* Action buttons will be rendered here by child components */}
+                </div>
               </div>
             </div>
           </div>
