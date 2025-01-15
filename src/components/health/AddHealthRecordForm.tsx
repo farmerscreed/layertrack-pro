@@ -8,42 +8,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useHealthRecords } from "@/hooks/useHealthRecords";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-const formSchema = z.object({
-  record_date: z.string(),
-  record_type: z.string().min(1, "Record type is required"),
-  description: z.string().min(1, "Description is required"),
-  cost: z.string()
-    .transform((val) => {
-      if (val === "") return null;
-      const parsed = parseFloat(val);
-      return isNaN(parsed) ? null : parsed;
-    }),
-  notes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { HealthRecordFormFields } from "./HealthRecordFormFields";
+import { healthRecordFormSchema, type HealthRecordFormValues } from "@/types/health";
 
 interface AddHealthRecordFormProps {
   batchId: string;
@@ -53,8 +23,8 @@ export function AddHealthRecordForm({ batchId }: AddHealthRecordFormProps) {
   const [open, setOpen] = useState(false);
   const { addHealthRecord } = useHealthRecords(batchId);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<HealthRecordFormValues>({
+    resolver: zodResolver(healthRecordFormSchema),
     defaultValues: {
       record_date: new Date().toISOString().split('T')[0],
       record_type: "",
@@ -64,7 +34,7 @@ export function AddHealthRecordForm({ batchId }: AddHealthRecordFormProps) {
     },
   });
 
-  async function onSubmit(values: FormValues) {
+  async function onSubmit(values: HealthRecordFormValues) {
     await addHealthRecord.mutateAsync({
       batch_id: batchId,
       record_date: values.record_date,
@@ -89,90 +59,7 @@ export function AddHealthRecordForm({ batchId }: AddHealthRecordFormProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="record_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="record_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Record Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select record type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="medication">Medication</SelectItem>
-                      <SelectItem value="disease">Disease</SelectItem>
-                      <SelectItem value="treatment">Treatment</SelectItem>
-                      <SelectItem value="checkup">Checkup</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Describe the health event"
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="cost"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cost (optional)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes (optional)</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Add any additional notes"
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <HealthRecordFormFields form={form} />
             <Button 
               type="submit" 
               className="w-full"
