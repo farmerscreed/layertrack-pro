@@ -10,6 +10,7 @@ import {
 import { Bird, MoreVertical, Loader2 } from "lucide-react";
 import { AddBatchForm } from "@/components/batches/AddBatchForm";
 import { useBatchManagement } from "@/hooks/useBatchManagement";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,10 +18,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
 
 const Batches = () => {
   const { batches, isLoadingBatches, deleteBatch } = useBatchManagement();
+  const { formatCurrency } = useCurrency();
 
   const totalBirds = batches?.reduce((acc, batch) => acc + batch.quantity, 0) || 0;
   const activeBatches = batches?.filter(batch => batch.status === 'active').length || 0;
@@ -35,12 +36,6 @@ const Batches = () => {
   const totalInvestment = batches?.reduce((acc, batch) => {
     return acc + (batch.quantity * (batch.cost_per_bird || 0));
   }, 0) || 0;
-
-  const mortalityRate = batches?.length
-    ? (batches.reduce((acc, batch) => {
-        return acc + (batch.batch_performance?.[0]?.mortality_rate || 0);
-      }, 0) / batches.length).toFixed(1)
-    : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -85,7 +80,7 @@ const Batches = () => {
             <Bird className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalInvestment.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalInvestment)}</div>
             <p className="text-xs text-muted-foreground">Bird purchase cost</p>
           </CardContent>
         </Card>
@@ -148,8 +143,8 @@ const Batches = () => {
                         <TableCell>{batch.breed || "N/A"}</TableCell>
                         <TableCell>{batch.quantity}</TableCell>
                         <TableCell>{weeks}</TableCell>
-                        <TableCell>${batch.cost_per_bird?.toFixed(2) || "0.00"}</TableCell>
-                        <TableCell>${(batch.quantity * (batch.cost_per_bird || 0)).toFixed(2)}</TableCell>
+                        <TableCell>{formatCurrency(batch.cost_per_bird || 0)}</TableCell>
+                        <TableCell>{formatCurrency(batch.quantity * (batch.cost_per_bird || 0))}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             batch.status === 'active' 

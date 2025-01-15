@@ -26,19 +26,6 @@ const currencySymbols: Record<string, string> = {
   ZAR: "R",
 };
 
-const currencyRates: Record<string, number> = {
-  USD: 1,
-  NGN: 1550, // Example rate (1 USD = 1550 NGN)
-  GBP: 0.79,
-  EUR: 0.92,
-  CAD: 1.35,
-  AUD: 1.52,
-  INR: 82.85,
-  JPY: 150.35,
-  CNY: 7.19,
-  ZAR: 18.95,
-};
-
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrency] = useState("USD");
 
@@ -86,15 +73,12 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const formatCurrency = (amount: number) => {
-    // Convert amount from USD to selected currency
-    const convertedAmount = amount * currencyRates[currency];
-    
     // Use Intl.NumberFormat for proper formatting
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
       currencyDisplay: 'narrowSymbol',
-    }).format(convertedAmount);
+    }).format(amount);
   };
 
   return (
