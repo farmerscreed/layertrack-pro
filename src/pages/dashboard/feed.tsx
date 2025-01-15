@@ -1,18 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShoppingCart, Package, TrendingDown, AlertTriangle } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { AddFeedForm } from "@/components/feed/AddFeedForm";
+import { AddFeedConsumptionForm } from "@/components/feed/AddFeedConsumptionForm";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FeedInventory } from "@/types/feed";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Feed = () => {
   const { formatCurrency } = useCurrency();
 
-  const { data: feedInventory, isLoading } = useQuery({
+  const { data: feedInventory, isLoading: isLoadingInventory } = useQuery({
     queryKey: ['feed_inventory'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -22,6 +23,24 @@ const Feed = () => {
       
       if (error) throw error;
       return data as FeedInventory[];
+    }
+  });
+
+  const { data: feedConsumption, isLoading: isLoadingConsumption } = useQuery({
+    queryKey: ['feed_consumption'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('feed_consumption')
+        .select(`
+          *,
+          batches (
+            name
+          )
+        `)
+        .order('consumption_date', { ascending: false });
+      
+      if (error) throw error;
+      return data;
     }
   });
 
@@ -35,19 +54,34 @@ const Feed = () => {
 
     const totalStock = feedInventory.reduce((sum, record) => sum + record.quantity_kg, 0);
     const lastRecord = feedInventory[0];
-    const averageConsumption = 450; // This should be calculated from actual consumption data
+    
+    // Calculate average daily consumption from the last 7 days
+    const last7DaysConsumption = feedConsumption
+      ?.filter(record => {
+        const date = new Date(record.consumption_date);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        return date >= sevenDaysAgo;
+      })
+      .reduce((sum, record) => sum + Number(record.quantity_kg), 0) || 0;
+
+    const averageConsumption = last7DaysConsumption / 7;
+
+    // Calculate days of feed remaining
+    const daysRemaining = averageConsumption > 0 ? Math.floor(totalStock / averageConsumption) : 0;
 
     return {
       currentStock: totalStock,
       dailyConsumption: averageConsumption,
-      lastPurchaseCost: lastRecord.cost_per_kg || 0,
-      stockStatus: totalStock < averageConsumption * 7 ? "Low" : "Adequate"
+      lastPurchaseCost: lastRecord?.cost_per_kg || 0,
+      stockStatus: daysRemaining < 7 ? "Low" : "Adequate",
+      daysRemaining
     };
   };
 
   const metrics = calculateMetrics();
 
-  if (isLoading) {
+  if (isLoadingInventory || isLoadingConsumption) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -66,8 +100,21 @@ const Feed = () => {
             Track feed inventory and consumption
           </p>
         </div>
-        <AddFeedForm />
+        <div className="space-x-2">
+          <AddFeedConsumptionForm feedInventory={feedInventory || []} />
+          <AddFeedForm />
+        </div>
       </div>
+
+      {metrics.stockStatus === "Low" && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Low Feed Stock Alert</AlertTitle>
+          <AlertDescription>
+            Current feed stock will last approximately {metrics.daysRemaining} days based on recent consumption patterns. Consider restocking soon.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="bg-gradient-to-br from-primary/10 to-transparent hover:shadow-lg transition-all duration-300">
@@ -76,7 +123,7 @@ const Feed = () => {
             <Package className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.currentStock}kg</div>
+            <div className="text-2xl font-bold">{metrics.currentStock.toFixed(1)}kg</div>
             <p className="text-xs text-muted-foreground">Total feed available</p>
           </CardContent>
         </Card>
@@ -87,7 +134,7 @@ const Feed = () => {
             <TrendingDown className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.dailyConsumption}kg</div>
+            <div className="text-2xl font-bold">{metrics.dailyConsumption.toFixed(1)}kg</div>
             <p className="text-xs text-muted-foreground">Average consumption</p>
           </CardContent>
         </Card>
@@ -111,7 +158,7 @@ const Feed = () => {
           <CardContent>
             <div className="text-2xl font-bold">{metrics.stockStatus}</div>
             <p className="text-xs text-muted-foreground">
-              {metrics.stockStatus === "Low" ? "Reorder needed" : "Stock level OK"}
+              {metrics.daysRemaining} days remaining
             </p>
           </CardContent>
         </Card>
@@ -154,6 +201,43 @@ const Feed = () => {
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4">
                     No feed records found
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card className="backdrop-blur-sm bg-white/50">
+        <CardHeader>
+          <CardTitle>Consumption History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>Batch</TableHead>
+                <TableHead>Quantity (kg)</TableHead>
+                <TableHead>Notes</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {feedConsumption?.map((record) => (
+                <TableRow key={record.id}>
+                  <TableCell className="font-mono">
+                    {new Date(record.consumption_date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="font-mono">{record.batches?.name}</TableCell>
+                  <TableCell className="font-mono">{record.quantity_kg}</TableCell>
+                  <TableCell className="font-mono">{record.notes || '-'}</TableCell>
+                </TableRow>
+              ))}
+              {!feedConsumption?.length && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4">
+                    No consumption records found
                   </TableCell>
                 </TableRow>
               )}

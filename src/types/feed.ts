@@ -17,3 +17,17 @@ export interface FeedFormData {
   cost: number;
   date: string;
 }
+
+export interface FeedConsumption {
+  id: string;
+  user_id: string;
+  feed_inventory_id: string;
+  batch_id: string;
+  quantity_kg: number;
+  consumption_date: string;
+  notes: string | null;
+  created_at: string;
+  batches?: {
+    name: string;
+  };
+}

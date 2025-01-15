@@ -255,6 +255,61 @@ export type Database = {
           },
         ]
       }
+      feed_consumption: {
+        Row: {
+          batch_id: string
+          consumption_date: string
+          created_at: string
+          feed_inventory_id: string
+          id: string
+          notes: string | null
+          quantity_kg: number
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          consumption_date?: string
+          created_at?: string
+          feed_inventory_id: string
+          id?: string
+          notes?: string | null
+          quantity_kg: number
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          consumption_date?: string
+          created_at?: string
+          feed_inventory_id?: string
+          id?: string
+          notes?: string | null
+          quantity_kg?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feed_consumption_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_consumption_feed_inventory_id_fkey"
+            columns: ["feed_inventory_id"]
+            isOneToOne: false
+            referencedRelation: "feed_inventory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_consumption_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_inventory: {
         Row: {
           cost_per_kg: number | null
