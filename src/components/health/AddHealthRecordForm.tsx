@@ -34,9 +34,11 @@ const formSchema = z.object({
   record_date: z.string(),
   record_type: z.string().min(1, "Record type is required"),
   description: z.string().min(1, "Description is required"),
-  cost: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
+  cost: z.string().optional().transform(val => val ? Number(val) : undefined),
   notes: z.string().optional(),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface AddHealthRecordFormProps {
   batchId: string;
@@ -46,7 +48,7 @@ export function AddHealthRecordForm({ batchId }: AddHealthRecordFormProps) {
   const [open, setOpen] = useState(false);
   const { addHealthRecord } = useHealthRecords(batchId);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       record_date: new Date().toISOString().split('T')[0],
@@ -57,10 +59,14 @@ export function AddHealthRecordForm({ batchId }: AddHealthRecordFormProps) {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormValues) {
     await addHealthRecord.mutateAsync({
       batch_id: batchId,
-      ...values,
+      record_date: values.record_date,
+      record_type: values.record_type,
+      description: values.description,
+      cost: values.cost,
+      notes: values.notes,
     });
     setOpen(false);
     form.reset();

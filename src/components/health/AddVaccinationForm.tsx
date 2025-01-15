@@ -29,6 +29,8 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 interface AddVaccinationFormProps {
   batchId: string;
 }
@@ -37,7 +39,7 @@ export function AddVaccinationForm({ batchId }: AddVaccinationFormProps) {
   const [open, setOpen] = useState(false);
   const { addVaccinationSchedule } = useHealthRecords(batchId);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       vaccine_name: "",
@@ -46,11 +48,13 @@ export function AddVaccinationForm({ batchId }: AddVaccinationFormProps) {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormValues) {
     await addVaccinationSchedule.mutateAsync({
       batch_id: batchId,
       status: 'pending',
-      ...values,
+      vaccine_name: values.vaccine_name,
+      scheduled_date: values.scheduled_date,
+      notes: values.notes,
     });
     setOpen(false);
     form.reset();

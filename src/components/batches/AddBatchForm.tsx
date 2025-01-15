@@ -32,11 +32,13 @@ const formSchema = z.object({
   notes: z.string().optional(),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export function AddBatchForm() {
   const [open, setOpen] = useState(false);
   const { addBatch } = useBatchManagement();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -47,7 +49,7 @@ export function AddBatchForm() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormValues) {
     await addBatch.mutateAsync(values);
     setOpen(false);
     form.reset();
