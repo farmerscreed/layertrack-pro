@@ -8,7 +8,7 @@ type CurrencyContextType = {
 
 const CurrencyContext = createContext<CurrencyContextType>({
   currency: "USD",
-  formatCurrency: (amount) => `$${amount.toFixed(2)}`,
+  formatCurrency: (amount) => `$${Math.round(amount)}`,
 });
 
 export const useCurrency = () => useContext(CurrencyContext);
@@ -73,11 +73,13 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const formatCurrency = (amount: number) => {
-    // Use Intl.NumberFormat for proper formatting
+    // Use Intl.NumberFormat for proper formatting, but with no decimal places
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency,
       currencyDisplay: 'narrowSymbol',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
