@@ -15,7 +15,7 @@ export const useBatchManagement = () => {
         .from('batches')
         .select(`
           *,
-          batch_performance (
+          batch_performance!batch_performance_batch_id_fkey (
             feed_conversion_ratio,
             mortality_rate,
             average_weight,

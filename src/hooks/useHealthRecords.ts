@@ -23,7 +23,7 @@ export interface VaccinationSchedule {
   created_at: string;
 }
 
-export const useHealthRecords = (batchId: string) => {
+export const useHealthRecords = (batchId?: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -31,6 +31,8 @@ export const useHealthRecords = (batchId: string) => {
   const healthRecords = useQuery({
     queryKey: ['healthRecords', batchId],
     queryFn: async () => {
+      if (!batchId) return [];
+      
       const { data, error } = await supabase
         .from('health_records')
         .select('*')
@@ -40,12 +42,15 @@ export const useHealthRecords = (batchId: string) => {
       if (error) throw error;
       return data as HealthRecord[];
     },
+    enabled: !!batchId,
   });
 
   // Fetch vaccination schedules
   const vaccinationSchedules = useQuery({
     queryKey: ['vaccinationSchedules', batchId],
     queryFn: async () => {
+      if (!batchId) return [];
+
       const { data, error } = await supabase
         .from('vaccination_schedules')
         .select('*')
@@ -55,6 +60,7 @@ export const useHealthRecords = (batchId: string) => {
       if (error) throw error;
       return data as VaccinationSchedule[];
     },
+    enabled: !!batchId,
   });
 
   // Add health record
