@@ -71,7 +71,7 @@ export function AddHealthRecordForm({ batchId }: AddHealthRecordFormProps) {
       record_type: values.record_type,
       description: values.description,
       cost: values.cost,
-      notes: values.notes,
+      notes: values.notes || "",
     });
     setOpen(false);
     form.reset();
