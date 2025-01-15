@@ -1,6 +1,7 @@
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart,
@@ -10,8 +11,10 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { useState } from "react";
 
 interface BatchMetrics {
   batchName: string;
@@ -19,6 +22,16 @@ interface BatchMetrics {
   mortalityRate: number;
   avgWeight: number;
   productionRate: number;
+  industryFCR?: number;
+  industryMortality?: number;
+  industryWeight?: number;
+  industryProduction?: number;
+}
+
+interface BatchPerformanceData {
+  id: string;
+  name: string;
+  metrics: BatchMetrics;
 }
 
 const fetchBatchMetrics = async (userId: string) => {
@@ -31,7 +44,11 @@ const fetchBatchMetrics = async (userId: string) => {
         feed_conversion_ratio,
         mortality_rate,
         average_weight,
-        production_rate
+        production_rate,
+        industry_standard_fcr,
+        industry_standard_mortality,
+        industry_standard_weight,
+        industry_standard_production
       )
     `)
     .eq('user_id', userId)
@@ -45,11 +62,16 @@ const fetchBatchMetrics = async (userId: string) => {
     mortalityRate: batch.batch_performance?.[0]?.mortality_rate || 0,
     avgWeight: batch.batch_performance?.[0]?.average_weight || 0,
     productionRate: batch.batch_performance?.[0]?.production_rate || 0,
+    industryFCR: batch.batch_performance?.[0]?.industry_standard_fcr,
+    industryMortality: batch.batch_performance?.[0]?.industry_standard_mortality,
+    industryWeight: batch.batch_performance?.[0]?.industry_standard_weight,
+    industryProduction: batch.batch_performance?.[0]?.industry_standard_production,
   }));
 };
 
 export const BatchComparison = () => {
   const session = useSession();
+  const [showIndustryStandards, setShowIndustryStandards] = useState(false);
 
   const { data: metrics, isLoading, error } = useQuery({
     queryKey: ['batch-metrics', session?.user.id],
@@ -63,10 +85,18 @@ export const BatchComparison = () => {
 
   return (
     <Card className="col-span-2 bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 backdrop-blur-sm">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
           Batch Performance Comparison
         </CardTitle>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowIndustryStandards(!showIndustryStandards)}
+          className="ml-4"
+        >
+          {showIndustryStandards ? 'Hide' : 'Show'} Industry Standards
+        </Button>
       </CardHeader>
       <CardContent>
         <ChartContainer
@@ -143,6 +173,34 @@ export const BatchComparison = () => {
                 radius={[4, 4, 0, 0]}
                 className="animate-in fade-in duration-1000 delay-300"
               />
+              {showIndustryStandards && (
+                <>
+                  <ReferenceLine
+                    y={metrics[0]?.industryFCR}
+                    stroke="#22c55e"
+                    strokeDasharray="3 3"
+                    label={{ value: 'Industry FCR', position: 'right' }}
+                  />
+                  <ReferenceLine
+                    y={metrics[0]?.industryMortality}
+                    stroke="#ef4444"
+                    strokeDasharray="3 3"
+                    label={{ value: 'Industry Mortality', position: 'right' }}
+                  />
+                  <ReferenceLine
+                    y={metrics[0]?.industryProduction}
+                    stroke="#3b82f6"
+                    strokeDasharray="3 3"
+                    label={{ value: 'Industry Production', position: 'right' }}
+                  />
+                  <ReferenceLine
+                    y={metrics[0]?.industryWeight}
+                    stroke="#f59e0b"
+                    strokeDasharray="3 3"
+                    label={{ value: 'Industry Weight', position: 'right' }}
+                  />
+                </>
+              )}
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>

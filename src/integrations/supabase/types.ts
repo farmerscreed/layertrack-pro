@@ -13,9 +13,14 @@ export type Database = {
         Row: {
           average_weight: number | null
           batch_id: string
+          benchmark_batch_id: string | null
           created_at: string
           feed_conversion_ratio: number | null
           id: string
+          industry_standard_fcr: number | null
+          industry_standard_mortality: number | null
+          industry_standard_production: number | null
+          industry_standard_weight: number | null
           mortality_rate: number | null
           production_rate: number | null
           week_number: number
@@ -23,9 +28,14 @@ export type Database = {
         Insert: {
           average_weight?: number | null
           batch_id: string
+          benchmark_batch_id?: string | null
           created_at?: string
           feed_conversion_ratio?: number | null
           id?: string
+          industry_standard_fcr?: number | null
+          industry_standard_mortality?: number | null
+          industry_standard_production?: number | null
+          industry_standard_weight?: number | null
           mortality_rate?: number | null
           production_rate?: number | null
           week_number: number
@@ -33,9 +43,14 @@ export type Database = {
         Update: {
           average_weight?: number | null
           batch_id?: string
+          benchmark_batch_id?: string | null
           created_at?: string
           feed_conversion_ratio?: number | null
           id?: string
+          industry_standard_fcr?: number | null
+          industry_standard_mortality?: number | null
+          industry_standard_production?: number | null
+          industry_standard_weight?: number | null
           mortality_rate?: number | null
           production_rate?: number | null
           week_number?: number
@@ -44,6 +59,13 @@ export type Database = {
           {
             foreignKeyName: "batch_performance_batch_id_fkey"
             columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_performance_benchmark_batch_id_fkey"
+            columns: ["benchmark_batch_id"]
             isOneToOne: false
             referencedRelation: "batches"
             referencedColumns: ["id"]
