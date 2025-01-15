@@ -81,12 +81,25 @@ export function AddTransactionForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user?.id;
+
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
       const { error } = await supabase
         .from('transactions')
-        .insert([{
-          ...values,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-        }]);
+        .insert({
+          user_id: userId,
+          type: values.type,
+          category: values.category,
+          amount: values.amount,
+          quantity: values.quantity,
+          description: values.description,
+          payment_method: values.paymentMethod,
+          created_at: new Date(values.date).toISOString(),
+        });
 
       if (error) throw error;
 
