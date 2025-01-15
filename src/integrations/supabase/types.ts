@@ -74,6 +74,7 @@ export type Database = {
       }
       batches: {
         Row: {
+          age_at_purchase: number | null
           arrival_date: string
           breed: string | null
           cost_per_bird: number | null
@@ -88,6 +89,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          age_at_purchase?: number | null
           arrival_date: string
           breed?: string | null
           cost_per_bird?: number | null
@@ -102,6 +104,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          age_at_purchase?: number | null
           arrival_date?: string
           breed?: string | null
           cost_per_bird?: number | null

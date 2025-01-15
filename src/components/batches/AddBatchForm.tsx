@@ -30,6 +30,7 @@ const formSchema = z.object({
   breed: z.string().optional(),
   arrival_date: z.string(),
   cost_per_bird: z.coerce.number().min(0, "Cost per bird must be 0 or greater"),
+  age_at_purchase: z.coerce.number().min(0, "Age must be 0 or greater"),
   notes: z.string().optional(),
 });
 
@@ -47,6 +48,7 @@ export function AddBatchForm() {
       breed: "",
       arrival_date: new Date().toISOString().split('T')[0],
       cost_per_bird: 0,
+      age_at_purchase: 0,
       notes: "",
     },
   });
@@ -58,6 +60,7 @@ export function AddBatchForm() {
       breed: values.breed,
       arrival_date: values.arrival_date,
       cost_per_bird: values.cost_per_bird,
+      age_at_purchase: values.age_at_purchase,
       notes: values.notes,
     });
     setOpen(false);
@@ -137,6 +140,27 @@ export function AddBatchForm() {
                   </FormControl>
                   <FormDescription>
                     Enter the purchase cost per bird
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="age_at_purchase"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Age at Purchase (weeks)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="0" 
+                      placeholder="Enter age in weeks"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter the age of birds when purchased (in weeks)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
