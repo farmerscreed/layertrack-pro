@@ -29,7 +29,7 @@ export function AddHealthRecordForm({ batchId }: AddHealthRecordFormProps) {
       record_date: new Date().toISOString().split('T')[0],
       record_type: "",
       description: "",
-      cost: "",
+      cost: null,
       notes: "",
     },
   });
