@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const formSchema = z.object({
   date: z.string(),
@@ -43,6 +44,7 @@ const formSchema = z.object({
 export function AddTransactionForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { currency } = useCurrency();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,7 +62,7 @@ export function AddTransactionForm() {
     console.log(values);
     toast({
       title: "Transaction Added",
-      description: `Added ${values.type} transaction of $${values.amount}.`,
+      description: `Added ${values.type} transaction of ${currency} ${values.amount}.`,
     });
     setOpen(false);
     form.reset();
