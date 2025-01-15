@@ -3,16 +3,66 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DollarSign, TrendingUp, PieChart, Wallet } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { AddTransactionForm } from "@/components/finance/AddTransactionForm";
-
-const financeData = [
-  { date: "2024-02-01", revenue: 12500, expenses: 8500, profit: 4000 },
-  { date: "2024-02-02", revenue: 13000, expenses: 8700, profit: 4300 },
-  { date: "2024-02-03", revenue: 12800, expenses: 8600, profit: 4200 },
-  { date: "2024-02-04", revenue: 13200, expenses: 8800, profit: 4400 },
-  { date: "2024-02-05", revenue: 13500, expenses: 8900, profit: 4600 },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { Loader2 } from "lucide-react";
 
 const Finance = () => {
+  const { formatCurrency } = useCurrency();
+
+  const { data: transactions, isLoading } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const calculateFinancials = () => {
+    if (!transactions?.length) return {
+      revenue: 0,
+      expenses: 0,
+      profit: 0,
+      margin: 0
+    };
+
+    const totals = transactions.reduce((acc, transaction) => {
+      const amount = Number(transaction.amount);
+      if (transaction.type === 'income') {
+        acc.revenue += amount;
+      } else {
+        acc.expenses += amount;
+      }
+      return acc;
+    }, { revenue: 0, expenses: 0 });
+
+    const profit = totals.revenue - totals.expenses;
+    const margin = totals.revenue > 0 ? (profit / totals.revenue) * 100 : 0;
+
+    return {
+      revenue: totals.revenue,
+      expenses: totals.expenses,
+      profit,
+      margin
+    };
+  };
+
+  const financials = calculateFinancials();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
@@ -34,11 +84,8 @@ const Finance = () => {
             <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$13,500</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-              <span className="text-green-500">+2.3%</span> vs last month
-            </div>
+            <div className="text-2xl font-bold">{formatCurrency(financials.revenue)}</div>
+            <p className="text-xs text-muted-foreground">Total revenue</p>
           </CardContent>
         </Card>
 
@@ -48,8 +95,8 @@ const Finance = () => {
             <Wallet className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$8,900</div>
-            <p className="text-xs text-muted-foreground">Total monthly expenses</p>
+            <div className="text-2xl font-bold">{formatCurrency(financials.expenses)}</div>
+            <p className="text-xs text-muted-foreground">Total expenses</p>
           </CardContent>
         </Card>
 
@@ -59,8 +106,8 @@ const Finance = () => {
             <PieChart className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$4,600</div>
-            <p className="text-xs text-muted-foreground">Net monthly profit</p>
+            <div className="text-2xl font-bold">{formatCurrency(financials.profit)}</div>
+            <p className="text-xs text-muted-foreground">Net profit</p>
           </CardContent>
         </Card>
 
@@ -70,56 +117,11 @@ const Finance = () => {
             <TrendingUp className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">34.1%</div>
+            <div className="text-2xl font-bold">{financials.margin.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">Current margin</p>
           </CardContent>
         </Card>
       </div>
-
-      <Card className="backdrop-blur-sm bg-white/50">
-        <CardHeader>
-          <CardTitle>Financial Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={financeData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(value) => new Date(value).toLocaleDateString()}
-                />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                  formatter={(value) => `$${value}`}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="#8B5CF6" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="expenses" 
-                  stroke="#0EA5E9" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="profit" 
-                  stroke="#D946EF" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card className="backdrop-blur-sm bg-white/50">
         <CardHeader>
@@ -130,26 +132,33 @@ const Finance = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Revenue</TableHead>
-                <TableHead>Expenses</TableHead>
-                <TableHead>Profit</TableHead>
-                <TableHead>Margin</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {financeData.map((record) => (
-                <TableRow key={record.date}>
+              {transactions?.map((record) => (
+                <TableRow key={record.id}>
                   <TableCell className="font-mono">
-                    {new Date(record.date).toLocaleDateString()}
+                    {new Date(record.created_at).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="font-mono">${record.revenue}</TableCell>
-                  <TableCell className="font-mono">${record.expenses}</TableCell>
-                  <TableCell className="font-mono">${record.profit}</TableCell>
+                  <TableCell className="font-mono capitalize">{record.type}</TableCell>
+                  <TableCell className="font-mono capitalize">{record.category}</TableCell>
+                  <TableCell className="font-mono">{record.description}</TableCell>
                   <TableCell className="font-mono">
-                    {((record.profit / record.revenue) * 100).toFixed(1)}%
+                    {formatCurrency(record.amount)}
                   </TableCell>
                 </TableRow>
               ))}
+              {!transactions?.length && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4">
+                    No transactions found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
