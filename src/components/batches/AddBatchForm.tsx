@@ -50,7 +50,13 @@ export function AddBatchForm() {
   });
 
   async function onSubmit(values: FormValues) {
-    await addBatch.mutateAsync(values);
+    await addBatch.mutateAsync({
+      name: values.name,
+      quantity: values.quantity,
+      breed: values.breed,
+      arrival_date: values.arrival_date,
+      notes: values.notes,
+    });
     setOpen(false);
     form.reset();
   }
