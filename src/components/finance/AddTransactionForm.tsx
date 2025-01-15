@@ -11,7 +11,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -32,6 +31,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Transaction, TransactionFormData } from "@/types/finance";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
   date: z.string(),
@@ -43,31 +44,23 @@ const formSchema = z.object({
   paymentMethod: z.enum(["cash", "bank", "mobile"]),
 });
 
-const incomeCategories = [
-  "egg_sales",
-  "bird_sales",
-  "manure_sales",
-  "other_income"
-];
+const incomeCategories = ["egg_sales", "bird_sales", "manure_sales", "other_income"];
+const expenseCategories = ["feed", "medicine", "equipment", "utilities", "labor", "maintenance", "other_expense"];
 
-const expenseCategories = [
-  "feed",
-  "medicine",
-  "equipment",
-  "utilities",
-  "labor",
-  "maintenance",
-  "other_expense"
-];
+interface AddTransactionFormProps {
+  editingTransaction?: Transaction | null;
+  onEditComplete?: () => void;
+}
 
-export function AddTransactionForm() {
+export function AddTransactionForm({ editingTransaction, onEditComplete }: AddTransactionFormProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const { currency } = useCurrency();
   const [selectedType, setSelectedType] = useState<"income" | "expense">("income");
   const [totalAmount, setTotalAmount] = useState(0);
+  const queryClient = useQueryClient();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<TransactionFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       date: new Date().toISOString().split("T")[0],
@@ -80,7 +73,22 @@ export function AddTransactionForm() {
     },
   });
 
-  // Watch for changes in unit cost and quantity to update total amount
+  useEffect(() => {
+    if (editingTransaction) {
+      setOpen(true);
+      form.reset({
+        date: new Date(editingTransaction.created_at).toISOString().split("T")[0],
+        type: editingTransaction.type as "income" | "expense",
+        category: editingTransaction.category,
+        unitCost: editingTransaction.unit_cost || 0,
+        quantity: editingTransaction.quantity || 0,
+        description: editingTransaction.description || "",
+        paymentMethod: editingTransaction.payment_method as "cash" | "bank" | "mobile" || "cash",
+      });
+      setSelectedType(editingTransaction.type as "income" | "expense");
+    }
+  }, [editingTransaction, form]);
+
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'unitCost' || name === 'quantity') {
@@ -92,7 +100,7 @@ export function AddTransactionForm() {
     return () => subscription.unsubscribe();
   }, [form.watch]);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: TransactionFormData) {
     try {
       const user = await supabase.auth.getUser();
       const userId = user.data.user?.id;
@@ -101,32 +109,47 @@ export function AddTransactionForm() {
         throw new Error("User not authenticated");
       }
 
-      const { error } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: userId,
-          type: values.type,
-          category: values.category,
-          amount: totalAmount,
-          quantity: values.quantity,
-          unit_cost: values.unitCost,
-          description: values.description,
-          payment_method: values.paymentMethod,
-          created_at: new Date(values.date).toISOString(),
-        });
+      const transactionData = {
+        user_id: userId,
+        type: values.type,
+        category: values.category,
+        amount: totalAmount,
+        quantity: values.quantity,
+        unit_cost: values.unitCost,
+        description: values.description,
+        payment_method: values.paymentMethod,
+        created_at: new Date(values.date).toISOString(),
+      };
+
+      let error;
+      if (editingTransaction) {
+        const { error: updateError } = await supabase
+          .from('transactions')
+          .update(transactionData)
+          .eq('id', editingTransaction.id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('transactions')
+          .insert(transactionData);
+        error = insertError;
+      }
 
       if (error) throw error;
 
       toast({
-        title: "Transaction Added",
-        description: `Added ${values.type} transaction of ${currency} ${totalAmount}.`,
+        title: editingTransaction ? "Transaction Updated" : "Transaction Added",
+        description: `${editingTransaction ? 'Updated' : 'Added'} ${values.type} transaction of ${currency} ${totalAmount}.`,
       });
+      
       setOpen(false);
       form.reset();
+      if (onEditComplete) onEditComplete();
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to add transaction. Please try again.",
+        description: `Failed to ${editingTransaction ? 'update' : 'add'} transaction. Please try again.`,
         variant: "destructive",
       });
     }
@@ -139,13 +162,15 @@ export function AddTransactionForm() {
           size="sm" 
           className="fixed md:static top-4 right-4 z-50 md:z-0 h-8 px-3 md:h-10 md:px-4 md:py-2"
         >
-          Add Transaction
+          {editingTransaction ? 'Edit' : 'Add'} Transaction
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Transaction</DialogTitle>
-          <DialogDescription>Record a new financial transaction.</DialogDescription>
+          <DialogTitle>{editingTransaction ? 'Edit' : 'Add'} Transaction</DialogTitle>
+          <DialogDescription>
+            {editingTransaction ? 'Modify' : 'Record'} a financial transaction.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -278,7 +303,7 @@ export function AddTransactionForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit">Submit</Button>
+            <Button type="submit">{editingTransaction ? 'Update' : 'Submit'}</Button>
           </form>
         </Form>
       </DialogContent>
