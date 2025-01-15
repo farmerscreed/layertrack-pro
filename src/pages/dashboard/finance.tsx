@@ -1,15 +1,30 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DollarSign, TrendingUp, PieChart, Wallet } from "lucide-react";
+import { DollarSign, TrendingUp, PieChart, Wallet, Pencil, Trash2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { AddTransactionForm } from "@/components/finance/AddTransactionForm";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Finance = () => {
   const { formatCurrency } = useCurrency();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ['transactions'],
@@ -23,6 +38,31 @@ const Finance = () => {
       return data || [];
     }
   });
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Transaction Deleted",
+        description: "The transaction has been successfully deleted.",
+      });
+
+      // Refresh the transactions data
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete transaction. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const calculateFinancials = () => {
     if (!transactions?.length) return {
@@ -135,8 +175,10 @@ const Finance = () => {
                 <TableHead>Type</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Description</TableHead>
+                <TableHead>Unit Cost</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -150,15 +192,62 @@ const Finance = () => {
                     {record.category.split('_').join(' ')}
                   </TableCell>
                   <TableCell className="font-mono">{record.description}</TableCell>
+                  <TableCell className="font-mono">{formatCurrency(record.unit_cost || 0)}</TableCell>
                   <TableCell className="font-mono">{record.quantity || 0}</TableCell>
                   <TableCell className="font-mono">
                     {formatCurrency(record.amount)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          // Edit functionality will be implemented later
+                          toast({
+                            title: "Coming Soon",
+                            description: "Edit functionality will be available soon.",
+                          });
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this transaction? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(record.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
               {!transactions?.length && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={8} className="text-center py-4">
                     No transactions found
                   </TableCell>
                 </TableRow>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,7 +37,7 @@ const formSchema = z.object({
   date: z.string(),
   type: z.enum(["income", "expense"]),
   category: z.string().min(2, "Category is required"),
-  amount: z.coerce.number().min(0, "Amount must be non-negative"),
+  unitCost: z.coerce.number().min(0, "Unit cost must be non-negative"),
   quantity: z.coerce.number().min(0, "Quantity must be non-negative"),
   description: z.string().min(2, "Description is required"),
   paymentMethod: z.enum(["cash", "bank", "mobile"]),
@@ -65,6 +65,7 @@ export function AddTransactionForm() {
   const { toast } = useToast();
   const { currency } = useCurrency();
   const [selectedType, setSelectedType] = useState<"income" | "expense">("income");
+  const [totalAmount, setTotalAmount] = useState(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -72,12 +73,24 @@ export function AddTransactionForm() {
       date: new Date().toISOString().split("T")[0],
       type: "income",
       category: "",
-      amount: 0,
+      unitCost: 0,
       quantity: 0,
       description: "",
       paymentMethod: "cash",
     },
   });
+
+  // Watch for changes in unit cost and quantity to update total amount
+  useEffect(() => {
+    const subscription = form.watch((value, { name, type }) => {
+      if (name === 'unitCost' || name === 'quantity') {
+        const unitCost = form.getValues('unitCost');
+        const quantity = form.getValues('quantity');
+        setTotalAmount(unitCost * quantity);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -94,8 +107,9 @@ export function AddTransactionForm() {
           user_id: userId,
           type: values.type,
           category: values.category,
-          amount: values.amount,
+          amount: totalAmount,
           quantity: values.quantity,
+          unit_cost: values.unitCost,
           description: values.description,
           payment_method: values.paymentMethod,
           created_at: new Date(values.date).toISOString(),
@@ -105,7 +119,7 @@ export function AddTransactionForm() {
 
       toast({
         title: "Transaction Added",
-        description: `Added ${values.type} transaction of ${currency} ${values.amount}.`,
+        description: `Added ${values.type} transaction of ${currency} ${totalAmount}.`,
       });
       setOpen(false);
       form.reset();
@@ -158,7 +172,7 @@ export function AddTransactionForm() {
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedType(value as "income" | "expense");
-                      form.setValue("category", ""); // Reset category when type changes
+                      form.setValue("category", "");
                     }} 
                     defaultValue={field.value}
                   >
@@ -202,10 +216,10 @@ export function AddTransactionForm() {
             />
             <FormField
               control={form.control}
-              name="amount"
+              name="unitCost"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount ({currency})</FormLabel>
+                  <FormLabel>Unit Cost ({currency})</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -226,6 +240,9 @@ export function AddTransactionForm() {
                 </FormItem>
               )}
             />
+            <div className="py-2">
+              <p className="text-sm font-medium">Total Amount: {currency} {totalAmount}</p>
+            </div>
             <FormField
               control={form.control}
               name="description"
