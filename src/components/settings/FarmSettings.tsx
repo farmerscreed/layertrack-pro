@@ -44,6 +44,11 @@ export const FarmSettings = () => {
     try {
       setLoading(true);
 
+      // Get the current user's ID
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("No user found");
+
       const { data: existingSettings } = await supabase
         .from("farm_settings")
         .select("id")
@@ -64,13 +69,14 @@ export const FarmSettings = () => {
         if (error) throw error;
       } else {
         // Insert new settings
-        const { error } = await supabase.from("farm_settings").insert([
-          {
+        const { error } = await supabase
+          .from("farm_settings")
+          .insert({
+            user_id: user.id,
             farm_name: farmName,
             registration_number: registrationNumber,
             address,
-          },
-        ]);
+          });
 
         if (error) throw error;
       }
