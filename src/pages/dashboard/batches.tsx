@@ -10,33 +10,6 @@ import {
 import { Bird, MoreVertical } from "lucide-react";
 import { AddBatchForm } from "@/components/batches/AddBatchForm";
 
-const batches = [
-  {
-    id: "BAT001",
-    breed: "Isa Brown",
-    count: 5000,
-    age: 45,
-    mortality: 0.5,
-    status: "Active",
-  },
-  {
-    id: "BAT002",
-    breed: "Lohmann Brown",
-    count: 3500,
-    age: 30,
-    mortality: 0.3,
-    status: "Active",
-  },
-  {
-    id: "BAT003",
-    breed: "Hy-Line Brown",
-    count: 4200,
-    age: 20,
-    mortality: 0.2,
-    status: "Active",
-  },
-];
-
 const Batches = () => {
   return (
     <div className="space-y-6 animate-fade-in">
@@ -59,7 +32,7 @@ const Batches = () => {
             <Bird className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12,700</div>
+            <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">Across all batches</p>
           </CardContent>
         </Card>
@@ -70,7 +43,7 @@ const Batches = () => {
             <Bird className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">32 weeks</div>
+            <div className="text-2xl font-bold">0 weeks</div>
             <p className="text-xs text-muted-foreground">Weighted average</p>
           </CardContent>
         </Card>
@@ -81,7 +54,7 @@ const Batches = () => {
             <Bird className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0.33%</div>
+            <div className="text-2xl font-bold">0%</div>
             <p className="text-xs text-muted-foreground">Last 30 days</p>
           </CardContent>
         </Card>
@@ -92,7 +65,7 @@ const Batches = () => {
             <Bird className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">0</div>
             <p className="text-xs text-muted-foreground">Currently active</p>
           </CardContent>
         </Card>
@@ -117,25 +90,7 @@ const Batches = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {batches.map((batch) => (
-                  <TableRow key={batch.id} className="hover:bg-white/5 transition-colors">
-                    <TableCell className="font-mono">{batch.id}</TableCell>
-                    <TableCell>{batch.breed}</TableCell>
-                    <TableCell className="font-mono">{batch.count.toLocaleString()}</TableCell>
-                    <TableCell className="font-mono">{batch.age}</TableCell>
-                    <TableCell className="font-mono">{batch.mortality}</TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-primary/10 text-primary">
-                        {batch.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <button className="inline-flex items-center justify-center rounded-md w-8 h-8 hover:bg-white/10 transition-colors">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {/* Data will be populated from user input */}
               </TableBody>
             </Table>
           </div>
