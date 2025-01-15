@@ -29,6 +29,7 @@ const formSchema = z.object({
   quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
   breed: z.string().optional(),
   arrival_date: z.string(),
+  cost_per_bird: z.coerce.number().min(0, "Cost per bird must be 0 or greater"),
   notes: z.string().optional(),
 });
 
@@ -45,6 +46,7 @@ export function AddBatchForm() {
       quantity: 1,
       breed: "",
       arrival_date: new Date().toISOString().split('T')[0],
+      cost_per_bird: 0,
       notes: "",
     },
   });
@@ -55,6 +57,7 @@ export function AddBatchForm() {
       quantity: values.quantity,
       breed: values.breed,
       arrival_date: values.arrival_date,
+      cost_per_bird: values.cost_per_bird,
       notes: values.notes,
     });
     setOpen(false);
@@ -113,6 +116,28 @@ export function AddBatchForm() {
                   <FormControl>
                     <Input placeholder="Enter breed (optional)" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="cost_per_bird"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cost per Bird</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min="0" 
+                      step="0.01" 
+                      placeholder="Enter cost per bird"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter the purchase cost per bird
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

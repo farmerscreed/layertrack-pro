@@ -76,36 +76,42 @@ export type Database = {
         Row: {
           arrival_date: string
           breed: string | null
+          cost_per_bird: number | null
           created_at: string
           id: string
           name: string
           notes: string | null
           quantity: number
           status: string | null
+          total_cost: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           arrival_date: string
           breed?: string | null
+          cost_per_bird?: number | null
           created_at?: string
           id?: string
           name: string
           notes?: string | null
           quantity: number
           status?: string | null
+          total_cost?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           arrival_date?: string
           breed?: string | null
+          cost_per_bird?: number | null
           created_at?: string
           id?: string
           name?: string
           notes?: string | null
           quantity?: number
           status?: string | null
+          total_cost?: number | null
           updated_at?: string
           user_id?: string
         }

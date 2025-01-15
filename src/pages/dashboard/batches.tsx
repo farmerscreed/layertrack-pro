@@ -32,6 +32,10 @@ const Batches = () => {
       }, 0) / batches.length)
     : 0;
 
+  const totalInvestment = batches?.reduce((acc, batch) => {
+    return acc + (batch.quantity * (batch.cost_per_bird || 0));
+  }, 0) || 0;
+
   const mortalityRate = batches?.length
     ? (batches.reduce((acc, batch) => {
         return acc + (batch.batch_performance?.[0]?.mortality_rate || 0);
@@ -77,12 +81,12 @@ const Batches = () => {
         
         <Card className="bg-gradient-to-br from-accent/10 via-accent/5 to-transparent hover:shadow-lg transition-all duration-300 border border-white/20 backdrop-blur-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Mortality Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Investment</CardTitle>
             <Bird className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mortalityRate}%</div>
-            <p className="text-xs text-muted-foreground">Average rate</p>
+            <div className="text-2xl font-bold">${totalInvestment.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Bird purchase cost</p>
           </CardContent>
         </Card>
         
@@ -111,7 +115,8 @@ const Batches = () => {
                   <TableHead>Breed</TableHead>
                   <TableHead>Bird Count</TableHead>
                   <TableHead>Age (weeks)</TableHead>
-                  <TableHead>Mortality (%)</TableHead>
+                  <TableHead>Cost/Bird</TableHead>
+                  <TableHead>Total Cost</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -119,7 +124,7 @@ const Batches = () => {
               <TableBody>
                 {isLoadingBatches ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center">
+                    <TableCell colSpan={8} className="text-center">
                       <div className="flex items-center justify-center py-4">
                         <Loader2 className="h-6 w-6 animate-spin" />
                       </div>
@@ -127,7 +132,7 @@ const Batches = () => {
                   </TableRow>
                 ) : batches?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4">
+                    <TableCell colSpan={8} className="text-center py-4">
                       No batches found. Add your first batch to get started.
                     </TableCell>
                   </TableRow>
@@ -143,9 +148,8 @@ const Batches = () => {
                         <TableCell>{batch.breed || "N/A"}</TableCell>
                         <TableCell>{batch.quantity}</TableCell>
                         <TableCell>{weeks}</TableCell>
-                        <TableCell>
-                          {batch.batch_performance?.[0]?.mortality_rate?.toFixed(1) || "0.0"}%
-                        </TableCell>
+                        <TableCell>${batch.cost_per_bird?.toFixed(2) || "0.00"}</TableCell>
+                        <TableCell>${(batch.quantity * (batch.cost_per_bird || 0)).toFixed(2)}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             batch.status === 'active' 
