@@ -42,6 +42,7 @@ export const useBatchManagement = () => {
       quantity: number;
       breed?: string;
       arrival_date: string;
+      cost_per_bird: number;
       notes?: string;
     }) => {
       const { data, error } = await supabase
@@ -83,6 +84,7 @@ export const useBatchManagement = () => {
       breed?: string;
       notes?: string;
       status?: string;
+      cost_per_bird?: number;
     }) => {
       const { id, ...updateData } = values;
       const { data, error } = await supabase
