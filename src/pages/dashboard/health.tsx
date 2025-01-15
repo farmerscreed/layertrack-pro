@@ -1,142 +1,138 @@
+import { useParams } from "react-router-dom";
+import { useHealthRecords } from "@/hooks/useHealthRecords";
+import { AddHealthRecordForm } from "@/components/health/AddHealthRecordForm";
+import { AddVaccinationForm } from "@/components/health/AddVaccinationForm";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Heart, Activity, Syringe, AlertTriangle } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
-const healthData = [
-  { date: "2024-02-01", mortality: 0.2, vaccination: 98.5, medication: 2 },
-  { date: "2024-02-02", mortality: 0.1, vaccination: 98.5, medication: 1 },
-  { date: "2024-02-03", mortality: 0.3, vaccination: 99.0, medication: 3 },
-  { date: "2024-02-04", mortality: 0.2, vaccination: 99.0, medication: 2 },
-  { date: "2024-02-05", mortality: 0.1, vaccination: 99.0, medication: 1 },
-];
+export default function Health() {
+  const { batchId } = useParams<{ batchId: string }>();
+  const { 
+    healthRecords, 
+    vaccinationSchedules,
+    updateVaccinationStatus 
+  } = useHealthRecords(batchId!);
 
-const Health = () => {
+  if (healthRecords.isLoading || vaccinationSchedules.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-          Health Monitoring
-        </h1>
-        <p className="text-muted-foreground">
-          Track health records and vaccination schedules
-        </p>
+    <div className="space-y-8 p-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold tracking-tight">Health Records</h2>
+        <div className="space-x-4">
+          <AddHealthRecordForm batchId={batchId!} />
+          <AddVaccinationForm batchId={batchId!} />
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-transparent hover:shadow-lg transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Mortality Rate</CardTitle>
-            <Heart className="h-4 w-4 text-primary" />
+      <div className="grid md:grid-cols-2 gap-8">
+        {/* Health Records */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Health Records</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0.2%</div>
-            <p className="text-xs text-muted-foreground">Last 7 days average</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-secondary/10 to-transparent hover:shadow-lg transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Vaccination Rate</CardTitle>
-            <Syringe className="h-4 w-4 text-secondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">99%</div>
-            <p className="text-xs text-muted-foreground">Current coverage</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-accent/10 to-transparent hover:shadow-lg transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Treatments</CardTitle>
-            <Activity className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Ongoing medications</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-destructive/10 to-transparent hover:shadow-lg transition-all duration-300">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Health Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1</div>
-            <p className="text-xs text-muted-foreground">Requires attention</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="backdrop-blur-sm bg-white/50">
-        <CardHeader>
-          <CardTitle>Health Trends</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={healthData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(value) => new Date(value).toLocaleDateString()}
-                />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="mortality" 
-                  stroke="#8B5CF6" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="vaccination" 
-                  stroke="#0EA5E9" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="backdrop-blur-sm bg-white/50">
-        <CardHeader>
-          <CardTitle>Recent Health Records</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Mortality Rate (%)</TableHead>
-                <TableHead>Vaccination Rate (%)</TableHead>
-                <TableHead>Active Medications</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {healthData.map((record) => (
-                <TableRow key={record.date}>
-                  <TableCell className="font-mono">
-                    {new Date(record.date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="font-mono">{record.mortality}</TableCell>
-                  <TableCell className="font-mono">{record.vaccination}</TableCell>
-                  <TableCell className="font-mono">{record.medication}</TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Cost</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {healthRecords.data?.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>
+                      {format(new Date(record.record_date), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell className="capitalize">{record.record_type}</TableCell>
+                    <TableCell>{record.description}</TableCell>
+                    <TableCell>
+                      {record.cost ? `$${record.cost.toFixed(2)}` : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Vaccination Schedule */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Vaccination Schedule</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Vaccine</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vaccinationSchedules.data?.map((schedule) => (
+                  <TableRow key={schedule.id}>
+                    <TableCell>
+                      {format(new Date(schedule.scheduled_date), 'MMM d, yyyy')}
+                    </TableCell>
+                    <TableCell>{schedule.vaccine_name}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={
+                          schedule.status === 'completed' ? 'default' :
+                          schedule.status === 'pending' ? 'secondary' :
+                          'destructive'
+                        }
+                      >
+                        {schedule.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {schedule.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            updateVaccinationStatus.mutate({
+                              id: schedule.id,
+                              status: 'completed'
+                            });
+                          }}
+                          disabled={updateVaccinationStatus.isPending}
+                        >
+                          Mark Complete
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-};
-
-export default Health;
+}
