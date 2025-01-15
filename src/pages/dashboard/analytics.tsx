@@ -1,5 +1,6 @@
 import { MetricCard } from "@/components/analytics/MetricCard";
 import { RevenueChart } from "@/components/analytics/RevenueChart";
+import { FarmMetrics } from "@/components/analytics/FarmMetrics";
 import { AnalyticsSettings } from "@/components/analytics/AnalyticsSettings";
 
 const Analytics = () => {
@@ -46,6 +47,10 @@ const Analytics = () => {
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         <RevenueChart data={[]} />
+        <FarmMetrics />
+      </div>
+
+      <div className="grid gap-4 grid-cols-1">
         <AnalyticsSettings />
       </div>
     </div>
