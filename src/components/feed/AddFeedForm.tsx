@@ -11,7 +11,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,6 +21,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
   quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
@@ -34,6 +35,7 @@ const formSchema = z.object({
 export function AddFeedForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,14 +48,67 @@ export function AddFeedForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: "Feed Record Added",
-      description: `Added ${values.quantity}kg of ${values.type} feed.`,
-    });
-    setOpen(false);
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const user = await supabase.auth.getUser();
+      const userId = user.data.user?.id;
+
+      if (!userId) {
+        throw new Error("User not authenticated");
+      }
+
+      // Create feed inventory record
+      const { data: feedData, error: feedError } = await supabase
+        .from('feed_inventory')
+        .insert({
+          user_id: userId,
+          feed_type: values.type,
+          quantity_kg: values.quantity,
+          purchase_date: values.date,
+          cost_per_kg: values.cost,
+          supplier: values.supplier,
+        })
+        .select()
+        .single();
+
+      if (feedError) throw feedError;
+
+      // Create corresponding transaction
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          type: 'expense',
+          category: 'feed',
+          amount: values.quantity * values.cost,
+          quantity: values.quantity,
+          unit_cost: values.cost,
+          description: `Purchased ${values.quantity}kg of ${values.type} feed from ${values.supplier}`,
+          payment_method: 'cash',
+          created_at: new Date(values.date).toISOString(),
+          feed_inventory_id: feedData.id,
+        });
+
+      if (transactionError) throw transactionError;
+
+      toast({
+        title: "Feed Record Added",
+        description: `Added ${values.quantity}kg of ${values.type} feed.`,
+      });
+      
+      setOpen(false);
+      form.reset();
+      
+      // Invalidate both feed and transaction queries
+      queryClient.invalidateQueries({ queryKey: ['feed_inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add feed record. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -117,7 +172,7 @@ export function AddFeedForm() {
               name="cost"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cost</FormLabel>
+                  <FormLabel>Cost per kg</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" {...field} />
                   </FormControl>

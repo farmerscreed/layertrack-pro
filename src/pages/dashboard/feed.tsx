@@ -3,16 +3,58 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ShoppingCart, Package, TrendingDown, AlertTriangle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { AddFeedForm } from "@/components/feed/AddFeedForm";
-
-const feedData = [
-  { date: "2024-02-01", consumption: 450, stock: 2500, cost: 1200 },
-  { date: "2024-02-02", consumption: 460, stock: 2040, cost: 1220 },
-  { date: "2024-02-03", consumption: 455, stock: 1585, cost: 1210 },
-  { date: "2024-02-04", consumption: 470, stock: 1115, cost: 1250 },
-  { date: "2024-02-05", consumption: 465, stock: 650, cost: 1230 },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { FeedInventory } from "@/types/feed";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { Loader2 } from "lucide-react";
 
 const Feed = () => {
+  const { formatCurrency } = useCurrency();
+
+  const { data: feedInventory, isLoading } = useQuery({
+    queryKey: ['feed_inventory'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('feed_inventory')
+        .select('*')
+        .order('purchase_date', { ascending: false });
+      
+      if (error) throw error;
+      return data as FeedInventory[];
+    }
+  });
+
+  const calculateMetrics = () => {
+    if (!feedInventory?.length) return {
+      currentStock: 0,
+      dailyConsumption: 0,
+      lastPurchaseCost: 0,
+      stockStatus: "No data"
+    };
+
+    const totalStock = feedInventory.reduce((sum, record) => sum + record.quantity_kg, 0);
+    const lastRecord = feedInventory[0];
+    const averageConsumption = 450; // This should be calculated from actual consumption data
+
+    return {
+      currentStock: totalStock,
+      dailyConsumption: averageConsumption,
+      lastPurchaseCost: lastRecord.cost_per_kg || 0,
+      stockStatus: totalStock < averageConsumption * 7 ? "Low" : "Adequate"
+    };
+  };
+
+  const metrics = calculateMetrics();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
@@ -34,7 +76,7 @@ const Feed = () => {
             <Package className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">650kg</div>
+            <div className="text-2xl font-bold">{metrics.currentStock}kg</div>
             <p className="text-xs text-muted-foreground">Total feed available</p>
           </CardContent>
         </Card>
@@ -45,7 +87,7 @@ const Feed = () => {
             <TrendingDown className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">465kg</div>
+            <div className="text-2xl font-bold">{metrics.dailyConsumption}kg</div>
             <p className="text-xs text-muted-foreground">Average consumption</p>
           </CardContent>
         </Card>
@@ -56,7 +98,7 @@ const Feed = () => {
             <ShoppingCart className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$1,230</div>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.lastPurchaseCost)}/kg</div>
             <p className="text-xs text-muted-foreground">Last purchase</p>
           </CardContent>
         </Card>
@@ -67,48 +109,13 @@ const Feed = () => {
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Low</div>
-            <p className="text-xs text-muted-foreground">Reorder needed</p>
+            <div className="text-2xl font-bold">{metrics.stockStatus}</div>
+            <p className="text-xs text-muted-foreground">
+              {metrics.stockStatus === "Low" ? "Reorder needed" : "Stock level OK"}
+            </p>
           </CardContent>
         </Card>
       </div>
-
-      <Card className="backdrop-blur-sm bg-white/50">
-        <CardHeader>
-          <CardTitle>Feed Consumption Trends</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={feedData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(value) => new Date(value).toLocaleDateString()}
-                />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(value) => new Date(value).toLocaleDateString()}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="consumption" 
-                  stroke="#8B5CF6" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="stock" 
-                  stroke="#0EA5E9" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
 
       <Card className="backdrop-blur-sm bg-white/50">
         <CardHeader>
@@ -119,22 +126,37 @@ const Feed = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Consumption (kg)</TableHead>
-                <TableHead>Stock Level (kg)</TableHead>
-                <TableHead>Cost ($)</TableHead>
+                <TableHead>Feed Type</TableHead>
+                <TableHead>Quantity (kg)</TableHead>
+                <TableHead>Cost per kg</TableHead>
+                <TableHead>Total Cost</TableHead>
+                <TableHead>Supplier</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {feedData.map((record) => (
-                <TableRow key={record.date}>
+              {feedInventory?.map((record) => (
+                <TableRow key={record.id}>
                   <TableCell className="font-mono">
-                    {new Date(record.date).toLocaleDateString()}
+                    {new Date(record.purchase_date).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="font-mono">{record.consumption}</TableCell>
-                  <TableCell className="font-mono">{record.stock}</TableCell>
-                  <TableCell className="font-mono">${record.cost}</TableCell>
+                  <TableCell className="font-mono">{record.feed_type}</TableCell>
+                  <TableCell className="font-mono">{record.quantity_kg}</TableCell>
+                  <TableCell className="font-mono">
+                    {formatCurrency(record.cost_per_kg || 0)}
+                  </TableCell>
+                  <TableCell className="font-mono">
+                    {formatCurrency((record.cost_per_kg || 0) * record.quantity_kg)}
+                  </TableCell>
+                  <TableCell className="font-mono">{record.supplier}</TableCell>
                 </TableRow>
               ))}
+              {!feedInventory?.length && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-4">
+                    No feed records found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

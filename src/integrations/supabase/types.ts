@@ -420,6 +420,7 @@ export type Database = {
           category: string
           created_at: string
           description: string | null
+          feed_inventory_id: string | null
           id: string
           payment_method: string | null
           quantity: number | null
@@ -432,6 +433,7 @@ export type Database = {
           category: string
           created_at?: string
           description?: string | null
+          feed_inventory_id?: string | null
           id?: string
           payment_method?: string | null
           quantity?: number | null
@@ -444,6 +446,7 @@ export type Database = {
           category?: string
           created_at?: string
           description?: string | null
+          feed_inventory_id?: string | null
           id?: string
           payment_method?: string | null
           quantity?: number | null
@@ -452,6 +455,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_feed_inventory_id_fkey"
+            columns: ["feed_inventory_id"]
+            isOneToOne: false
+            referencedRelation: "feed_inventory"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_user_id_fkey"
             columns: ["user_id"]
