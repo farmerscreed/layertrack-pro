@@ -21,6 +21,13 @@ import { Upload } from "lucide-react"
 import Papa from 'papaparse'
 import { supabase } from "@/integrations/supabase/client"
 
+// Define the type for Papa.parse results
+interface ParseResult {
+  data: Record<string, any>[]
+  errors: Papa.ParseError[]
+  meta: Papa.ParseMeta
+}
+
 export function ImportDataDialog() {
   const [open, setOpen] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -33,8 +40,8 @@ export function ImportDataDialog() {
 
     setImporting(true)
     try {
-      // Parse CSV file
-      const result = await new Promise((resolve, reject) => {
+      // Parse CSV file with proper typing
+      const result = await new Promise<ParseResult>((resolve, reject) => {
         Papa.parse(file, {
           header: true,
           complete: resolve,
