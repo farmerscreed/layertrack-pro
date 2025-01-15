@@ -186,6 +186,44 @@ export type Database = {
           },
         ]
       }
+      farm_settings: {
+        Row: {
+          address: string | null
+          created_at: string
+          farm_name: string
+          id: string
+          registration_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          farm_name: string
+          id?: string
+          registration_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          farm_name?: string
+          id?: string
+          registration_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_inventory: {
         Row: {
           cost_per_kg: number | null
