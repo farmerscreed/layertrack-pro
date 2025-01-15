@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      batch_performance: {
+        Row: {
+          average_weight: number | null
+          batch_id: string
+          created_at: string
+          feed_conversion_ratio: number | null
+          id: string
+          mortality_rate: number | null
+          production_rate: number | null
+          week_number: number
+        }
+        Insert: {
+          average_weight?: number | null
+          batch_id: string
+          created_at?: string
+          feed_conversion_ratio?: number | null
+          id?: string
+          mortality_rate?: number | null
+          production_rate?: number | null
+          week_number: number
+        }
+        Update: {
+          average_weight?: number | null
+          batch_id?: string
+          created_at?: string
+          feed_conversion_ratio?: number | null
+          id?: string
+          mortality_rate?: number | null
+          production_rate?: number | null
+          week_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_performance_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       batches: {
         Row: {
           arrival_date: string
@@ -90,6 +131,57 @@ export type Database = {
             columns: ["batch_id"]
             isOneToOne: false
             referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_schedules: {
+        Row: {
+          created_at: string
+          description: string | null
+          employee_id: string
+          id: string
+          status: string | null
+          task_date: string
+          task_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          employee_id: string
+          id?: string
+          status?: string | null
+          task_date: string
+          task_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          employee_id?: string
+          id?: string
+          status?: string | null
+          task_date?: string
+          task_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -179,6 +271,44 @@ export type Database = {
           },
         ]
       }
+      inventory_alerts: {
+        Row: {
+          created_at: string
+          current_quantity: number
+          id: string
+          item_type: string
+          status: string | null
+          threshold_quantity: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_quantity: number
+          id?: string
+          item_type: string
+          status?: string | null
+          threshold_quantity: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_quantity?: number
+          id?: string
+          item_type?: string
+          status?: string | null
+          threshold_quantity?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_alerts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -214,6 +344,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      vaccination_schedules: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          status: string | null
+          vaccine_name: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          status?: string | null
+          vaccine_name: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          status?: string | null
+          vaccine_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccination_schedules_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
