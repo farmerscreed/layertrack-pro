@@ -2,6 +2,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import {
   BarChart,
@@ -15,6 +16,7 @@ import {
 } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface BatchMetrics {
   batchName: string;
@@ -26,15 +28,13 @@ interface BatchMetrics {
   industryMortality?: number;
   industryWeight?: number;
   industryProduction?: number;
+  benchmarkFCR?: number;
+  benchmarkMortality?: number;
+  benchmarkWeight?: number;
+  benchmarkProduction?: number;
 }
 
-interface BatchPerformanceData {
-  id: string;
-  name: string;
-  metrics: BatchMetrics;
-}
-
-const fetchBatchMetrics = async (userId: string) => {
+const fetchBatchMetrics = async (userId: string, benchmarkBatchId?: string) => {
   const { data: batches, error: batchError } = await supabase
     .from('batches')
     .select(`
@@ -48,13 +48,24 @@ const fetchBatchMetrics = async (userId: string) => {
         industry_standard_fcr,
         industry_standard_mortality,
         industry_standard_weight,
-        industry_standard_production
+        industry_standard_production,
+        benchmark_batch_id
       )
     `)
     .eq('user_id', userId)
     .eq('status', 'active');
 
   if (batchError) throw batchError;
+
+  let benchmarkMetrics = null;
+  if (benchmarkBatchId) {
+    const { data: benchmarkData } = await supabase
+      .from('batch_performance')
+      .select('*')
+      .eq('batch_id', benchmarkBatchId)
+      .single();
+    benchmarkMetrics = benchmarkData;
+  }
 
   return batches.map(batch => ({
     batchName: batch.name,
@@ -66,16 +77,34 @@ const fetchBatchMetrics = async (userId: string) => {
     industryMortality: batch.batch_performance?.[0]?.industry_standard_mortality,
     industryWeight: batch.batch_performance?.[0]?.industry_standard_weight,
     industryProduction: batch.batch_performance?.[0]?.industry_standard_production,
+    benchmarkFCR: benchmarkMetrics?.feed_conversion_ratio,
+    benchmarkMortality: benchmarkMetrics?.mortality_rate,
+    benchmarkWeight: benchmarkMetrics?.average_weight,
+    benchmarkProduction: benchmarkMetrics?.production_rate,
   }));
 };
 
 export const BatchComparison = () => {
   const session = useSession();
   const [showIndustryStandards, setShowIndustryStandards] = useState(false);
+  const [benchmarkBatchId, setBenchmarkBatchId] = useState<string>();
+
+  const { data: availableBatches } = useQuery({
+    queryKey: ['available-batches', session?.user.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('batches')
+        .select('id, name')
+        .eq('user_id', session?.user.id)
+        .eq('status', 'completed');
+      return data || [];
+    },
+    enabled: !!session?.user.id,
+  });
 
   const { data: metrics, isLoading, error } = useQuery({
-    queryKey: ['batch-metrics', session?.user.id],
-    queryFn: () => fetchBatchMetrics(session?.user.id || ''),
+    queryKey: ['batch-metrics', session?.user.id, benchmarkBatchId],
+    queryFn: () => fetchBatchMetrics(session?.user.id || '', benchmarkBatchId),
     enabled: !!session?.user.id,
   });
 
@@ -89,16 +118,45 @@ export const BatchComparison = () => {
         <CardTitle className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
           Batch Performance Comparison
         </CardTitle>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowIndustryStandards(!showIndustryStandards)}
-          className="ml-4"
-        >
-          {showIndustryStandards ? 'Hide' : 'Show'} Industry Standards
-        </Button>
+        <div className="flex items-center gap-4">
+          <Select value={benchmarkBatchId} onValueChange={setBenchmarkBatchId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select benchmark batch" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableBatches?.map((batch) => (
+                <SelectItem key={batch.id} value={batch.id}>
+                  {batch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowIndustryStandards(!showIndustryStandards)}
+          >
+            {showIndustryStandards ? 'Hide' : 'Show'} Industry Standards
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
+        {benchmarkBatchId && (
+          <div className="mb-4 flex gap-2 flex-wrap">
+            <Badge variant="outline" className="bg-[#22c55e]/10">
+              Benchmark FCR: {metrics[0]?.benchmarkFCR?.toFixed(2)}
+            </Badge>
+            <Badge variant="outline" className="bg-[#ef4444]/10">
+              Benchmark Mortality: {metrics[0]?.benchmarkMortality?.toFixed(2)}%
+            </Badge>
+            <Badge variant="outline" className="bg-[#3b82f6]/10">
+              Benchmark Production: {metrics[0]?.benchmarkProduction?.toFixed(2)}%
+            </Badge>
+            <Badge variant="outline" className="bg-[#f59e0b]/10">
+              Benchmark Weight: {metrics[0]?.benchmarkWeight?.toFixed(2)} kg
+            </Badge>
+          </div>
+        )}
         <ChartContainer
           className="h-[300px]"
           config={{
@@ -198,6 +256,34 @@ export const BatchComparison = () => {
                     stroke="#f59e0b"
                     strokeDasharray="3 3"
                     label={{ value: 'Industry Weight', position: 'right' }}
+                  />
+                </>
+              )}
+              {benchmarkBatchId && (
+                <>
+                  <ReferenceLine
+                    y={metrics[0]?.benchmarkFCR}
+                    stroke="#22c55e"
+                    strokeDasharray="5 5"
+                    label={{ value: 'Benchmark FCR', position: 'left' }}
+                  />
+                  <ReferenceLine
+                    y={metrics[0]?.benchmarkMortality}
+                    stroke="#ef4444"
+                    strokeDasharray="5 5"
+                    label={{ value: 'Benchmark Mortality', position: 'left' }}
+                  />
+                  <ReferenceLine
+                    y={metrics[0]?.benchmarkProduction}
+                    stroke="#3b82f6"
+                    strokeDasharray="5 5"
+                    label={{ value: 'Benchmark Production', position: 'left' }}
+                  />
+                  <ReferenceLine
+                    y={metrics[0]?.benchmarkWeight}
+                    stroke="#f59e0b"
+                    strokeDasharray="5 5"
+                    label={{ value: 'Benchmark Weight', position: 'left' }}
                   />
                 </>
               )}
