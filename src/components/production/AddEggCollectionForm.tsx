@@ -11,7 +11,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,6 +28,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "@supabase/auth-helpers-react";
 
 const formSchema = z.object({
   date: z.string(),
@@ -40,9 +42,78 @@ const formSchema = z.object({
   batchId: z.string().min(3, "Batch ID required"),
 });
 
+// Fetch batches from Supabase
+const fetchBatches = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('batches')
+    .select('id, name')
+    .eq('user_id', userId)
+    .eq('status', 'active');
+  
+  if (error) throw error;
+  return data;
+};
+
+// Fetch staff members from profiles table
+const fetchStaff = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name');
+  
+  if (error) throw error;
+  return data;
+};
+
 export function AddEggCollectionForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const session = useSession();
+  const queryClient = useQueryClient();
+
+  const { data: batches, isLoading: batchesLoading } = useQuery({
+    queryKey: ['batches', session?.user?.id],
+    queryFn: () => fetchBatches(session?.user?.id || ''),
+    enabled: !!session?.user?.id,
+  });
+
+  const { data: staff, isLoading: staffLoading } = useQuery({
+    queryKey: ['staff'],
+    queryFn: () => fetchStaff(session?.user?.id || ''),
+    enabled: !!session?.user?.id,
+  });
+
+  const addEggCollection = useMutation({
+    mutationFn: async (values: z.infer<typeof formSchema>) => {
+      const { error } = await supabase
+        .from('egg_production')
+        .insert({
+          batch_id: values.batchId,
+          collection_date: values.date,
+          quantity: values.totalEggs,
+          damaged: values.damaged,
+          notes: `Grade A: ${values.gradeA}, Grade B: ${values.gradeB}, Collected by: ${values.collectedBy}`,
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['egg-production'] });
+      toast({
+        title: "Collection Record Added",
+        description: "The egg collection record has been saved successfully.",
+      });
+      setOpen(false);
+      form.reset();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save egg collection record. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error adding egg collection:', error);
+    },
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,13 +129,11 @@ export function AddEggCollectionForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: "Collection Record Added",
-      description: `Added ${values.totalEggs} eggs collected from batch ${values.batchId}.`,
-    });
-    setOpen(false);
-    form.reset();
+    addEggCollection.mutate(values);
+  }
+
+  if (batchesLoading || staffLoading) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -102,7 +171,7 @@ export function AddEggCollectionForm() {
               name="batchId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Batch ID</FormLabel>
+                  <FormLabel>Batch</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -110,9 +179,11 @@ export function AddEggCollectionForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="BAT001">BAT001</SelectItem>
-                      <SelectItem value="BAT002">BAT002</SelectItem>
-                      <SelectItem value="BAT003">BAT003</SelectItem>
+                      {batches?.map((batch) => (
+                        <SelectItem key={batch.id} value={batch.id}>
+                          {batch.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -184,15 +255,20 @@ export function AddEggCollectionForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="john">John Doe</SelectItem>
-                      <SelectItem value="jane">Jane Smith</SelectItem>
+                      {staff?.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.full_name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit">Submit</Button>
+            <Button type="submit" disabled={addEggCollection.isPending}>
+              {addEggCollection.isPending ? "Saving..." : "Submit"}
+            </Button>
           </form>
         </Form>
       </DialogContent>
