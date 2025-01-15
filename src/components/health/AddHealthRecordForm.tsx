@@ -34,7 +34,7 @@ const formSchema = z.object({
   record_date: z.string(),
   record_type: z.string().min(1, "Record type is required"),
   description: z.string().min(1, "Description is required"),
-  cost: z.string().transform(val => val ? Number(val) : undefined),
+  cost: z.string().transform((val) => (val === "" ? undefined : Number(val))),
   notes: z.string().optional(),
 });
 
