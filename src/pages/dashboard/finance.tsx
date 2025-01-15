@@ -135,6 +135,7 @@ const Finance = () => {
                 <TableHead>Type</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Description</TableHead>
+                <TableHead>Quantity</TableHead>
                 <TableHead>Amount</TableHead>
               </TableRow>
             </TableHeader>
@@ -145,8 +146,11 @@ const Finance = () => {
                     {new Date(record.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="font-mono capitalize">{record.type}</TableCell>
-                  <TableCell className="font-mono capitalize">{record.category}</TableCell>
+                  <TableCell className="font-mono capitalize">
+                    {record.category.split('_').join(' ')}
+                  </TableCell>
                   <TableCell className="font-mono">{record.description}</TableCell>
+                  <TableCell className="font-mono">{record.quantity || 0}</TableCell>
                   <TableCell className="font-mono">
                     {formatCurrency(record.amount)}
                   </TableCell>
@@ -154,7 +158,7 @@ const Finance = () => {
               ))}
               {!transactions?.length && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     No transactions found
                   </TableCell>
                 </TableRow>

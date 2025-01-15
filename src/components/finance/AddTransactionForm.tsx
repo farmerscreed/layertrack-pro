@@ -31,20 +31,40 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   date: z.string(),
   type: z.enum(["income", "expense"]),
   category: z.string().min(2, "Category is required"),
   amount: z.coerce.number().min(0, "Amount must be non-negative"),
+  quantity: z.coerce.number().min(0, "Quantity must be non-negative"),
   description: z.string().min(2, "Description is required"),
   paymentMethod: z.enum(["cash", "bank", "mobile"]),
 });
+
+const incomeCategories = [
+  "egg_sales",
+  "bird_sales",
+  "manure_sales",
+  "other_income"
+];
+
+const expenseCategories = [
+  "feed",
+  "medicine",
+  "equipment",
+  "utilities",
+  "labor",
+  "maintenance",
+  "other_expense"
+];
 
 export function AddTransactionForm() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const { currency } = useCurrency();
+  const [selectedType, setSelectedType] = useState<"income" | "expense">("income");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,19 +73,36 @@ export function AddTransactionForm() {
       type: "income",
       category: "",
       amount: 0,
+      quantity: 0,
       description: "",
       paymentMethod: "cash",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: "Transaction Added",
-      description: `Added ${values.type} transaction of ${currency} ${values.amount}.`,
-    });
-    setOpen(false);
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .insert([{
+          ...values,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Transaction Added",
+        description: `Added ${values.type} transaction of ${currency} ${values.amount}.`,
+      });
+      setOpen(false);
+      form.reset();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add transaction. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -104,7 +141,14 @@ export function AddTransactionForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedType(value as "income" | "expense");
+                      form.setValue("category", ""); // Reset category when type changes
+                    }} 
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
@@ -132,12 +176,11 @@ export function AddTransactionForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="feed">Feed</SelectItem>
-                      <SelectItem value="medicine">Medicine</SelectItem>
-                      <SelectItem value="equipment">Equipment</SelectItem>
-                      <SelectItem value="salary">Salary</SelectItem>
-                      <SelectItem value="sales">Egg Sales</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      {(selectedType === "income" ? incomeCategories : expenseCategories).map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -149,9 +192,22 @@ export function AddTransactionForm() {
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel>Amount ({currency})</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantity</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
