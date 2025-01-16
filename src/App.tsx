@@ -23,33 +23,85 @@ import Analytics from "./pages/dashboard/analytics";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// Define route access based on roles
+const routeAccess = {
+  "/dashboard": ["admin", "manager", "worker"],
+  "/dashboard/batches": ["admin", "manager", "worker"],
+  "/dashboard/production": ["admin", "manager", "worker"],
+  "/dashboard/health": ["admin", "manager", "worker"],
+  "/dashboard/feed": ["admin", "manager", "worker"],
+  "/dashboard/finance": ["admin", "manager"],
+  "/dashboard/staff": ["admin"],
+  "/dashboard/settings": ["admin"],
+  "/dashboard/analytics": ["admin", "manager"],
+};
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRoles?: string[];
+}
+
+const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Initialize dark mode from localStorage
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     document.documentElement.classList.toggle('dark', savedDarkMode);
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
-    });
+
+      if (session?.user) {
+        // Fetch user role from profiles
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserRole(profile?.role || null);
+      }
+      setIsLoading(false);
+    };
+
+    checkSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setIsAuthenticated(!!session);
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserRole(profile?.role || null);
+      } else {
+        setUserRole(null);
+      }
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  if (isAuthenticated === null) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
+  }
+
+  // Check if user has required role for the route
+  if (requiredRoles.length > 0 && (!userRole || !requiredRoles.includes(userRole))) {
+    return <Navigate to="/dashboard" />;
   }
 
   return <>{children}</>;
@@ -70,20 +122,76 @@ const App = () => (
               <Route
                 path="/dashboard"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRoles={routeAccess["/dashboard"]}>
                     <DashboardLayout />
                   </ProtectedRoute>
                 }
               >
                 <Route index element={<Dashboard />} />
-                <Route path="batches" element={<Batches />} />
-                <Route path="production" element={<Production />} />
-                <Route path="health" element={<Health />} />
-                <Route path="feed" element={<Feed />} />
-                <Route path="finance" element={<Finance />} />
-                <Route path="staff" element={<Staff />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="analytics" element={<Analytics />} />
+                <Route 
+                  path="batches" 
+                  element={
+                    <ProtectedRoute requiredRoles={routeAccess["/dashboard/batches"]}>
+                      <Batches />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="production" 
+                  element={
+                    <ProtectedRoute requiredRoles={routeAccess["/dashboard/production"]}>
+                      <Production />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="health" 
+                  element={
+                    <ProtectedRoute requiredRoles={routeAccess["/dashboard/health"]}>
+                      <Health />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="feed" 
+                  element={
+                    <ProtectedRoute requiredRoles={routeAccess["/dashboard/feed"]}>
+                      <Feed />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="finance" 
+                  element={
+                    <ProtectedRoute requiredRoles={routeAccess["/dashboard/finance"]}>
+                      <Finance />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="staff" 
+                  element={
+                    <ProtectedRoute requiredRoles={routeAccess["/dashboard/staff"]}>
+                      <Staff />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="settings" 
+                  element={
+                    <ProtectedRoute requiredRoles={routeAccess["/dashboard/settings"]}>
+                      <Settings />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="analytics" 
+                  element={
+                    <ProtectedRoute requiredRoles={routeAccess["/dashboard/analytics"]}>
+                      <Analytics />
+                    </ProtectedRoute>
+                  } 
+                />
               </Route>
             </Routes>
           </BrowserRouter>

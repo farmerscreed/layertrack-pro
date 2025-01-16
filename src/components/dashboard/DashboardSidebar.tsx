@@ -15,8 +15,8 @@ import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -24,59 +24,92 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const menuItems = [
   {
     title: "Overview",
     url: "/dashboard",
     icon: Home,
+    roles: ["admin", "manager", "worker"],
   },
   {
     title: "Batches",
     url: "/dashboard/batches",
     icon: Bird,
+    roles: ["admin", "manager", "worker"],
   },
   {
     title: "Production",
     url: "/dashboard/production",
     icon: Egg,
+    roles: ["admin", "manager", "worker"],
   },
   {
     title: "Health",
     url: "/dashboard/health",
     icon: Heart,
+    roles: ["admin", "manager", "worker"],
   },
   {
     title: "Feed",
     url: "/dashboard/feed",
     icon: ShoppingCart,
+    roles: ["admin", "manager", "worker"],
   },
   {
     title: "Finance",
     url: "/dashboard/finance",
     icon: Wallet,
+    roles: ["admin", "manager"],
   },
   {
     title: "Staff",
     url: "/dashboard/staff",
     icon: Users,
+    roles: ["admin"],
   },
   {
     title: "Analytics",
     url: "/dashboard/analytics",
     icon: BarChart3,
+    roles: ["admin", "manager"],
   },
   {
     title: "Settings",
     url: "/dashboard/settings",
     icon: SettingsIcon,
+    roles: ["admin"],
   },
 ];
 
 export function DashboardSidebar() {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserRole = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        setUserRole(profile?.role || null);
+      }
+    };
+
+    getUserRole();
+  }, []);
+
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter(
+    item => userRole && item.roles.includes(userRole)
+  );
 
   const MenuContent = () => (
     <SidebarContent>
@@ -84,7 +117,7 @@ export function DashboardSidebar() {
         <SidebarGroupLabel>Menu</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            {menuItems.map((item) => (
+            {filteredMenuItems.map((item) => (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
                   asChild
