@@ -26,7 +26,7 @@ const Production = () => {
         .from('egg_production')
         .select(`
           *,
-          batch:batches(name)
+          batch:batches(name, quantity)
         `)
         .order('collection_date', { ascending: false })
         .limit(7);
@@ -69,7 +69,14 @@ const Production = () => {
     : 0;
 
   const gradeA = Math.floor(todayProduction.quantity * 0.85);
-  const layingRate = ((todayProduction.quantity / 5000) * 100).toFixed(1);
+  
+  // Calculate laying rate using the actual batch quantity
+  const calculateLayingRate = (record: any) => {
+    if (!record?.batch?.quantity || record.batch.quantity === 0) return 0;
+    return ((record.quantity / record.batch.quantity) * 100).toFixed(1);
+  };
+
+  const layingRate = calculateLayingRate(todayProduction);
 
   if (isLoading) {
     return <div>Loading production data...</div>;
@@ -198,7 +205,7 @@ const Production = () => {
                   <TableCell className="font-mono">{record.quantity.toLocaleString()}</TableCell>
                   <TableCell className="font-mono">{record.damaged || 0}</TableCell>
                   <TableCell className="font-mono">
-                    {((record.quantity / 5000) * 100).toFixed(1)}%
+                    {calculateLayingRate(record)}%
                   </TableCell>
                 </TableRow>
               ))}
