@@ -443,6 +443,7 @@ export type Database = {
           id: string
           mobile_alerts: boolean | null
           push_notifications: boolean | null
+          role: string | null
           updated_at: string
         }
         Insert: {
@@ -454,6 +455,7 @@ export type Database = {
           id: string
           mobile_alerts?: boolean | null
           push_notifications?: boolean | null
+          role?: string | null
           updated_at?: string
         }
         Update: {
@@ -465,6 +467,7 @@ export type Database = {
           id?: string
           mobile_alerts?: boolean | null
           push_notifications?: boolean | null
+          role?: string | null
           updated_at?: string
         }
         Relationships: []

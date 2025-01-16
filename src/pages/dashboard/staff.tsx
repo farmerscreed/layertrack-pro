@@ -9,7 +9,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 const Staff = () => {
   const session = useSession();
 
-  const { data: staffMembers, isLoading } = useQuery({
+  const { data: staffMembers, isLoading, refetch } = useQuery({
     queryKey: ['staff-members'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -87,7 +87,7 @@ const Staff = () => {
           <CardTitle>Current Staff Members</CardTitle>
         </CardHeader>
         <CardContent>
-          <StaffList staffMembers={staffMembers} />
+          <StaffList staffMembers={staffMembers} refetchStaff={refetch} />
         </CardContent>
       </Card>
 
