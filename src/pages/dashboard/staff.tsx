@@ -2,8 +2,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddStaffForm } from "@/components/staff/AddStaffForm";
 import { StaffList } from "@/components/staff/StaffList";
 import { Users, ShieldCheck, UserPlus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
 
 const Staff = () => {
+  const session = useSession();
+
+  const { data: staffMembers, isLoading } = useQuery({
+    queryKey: ['staff-members'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!session?.user?.id,
+  });
+
+  const newThisMonth = staffMembers?.filter(member => {
+    const createdAt = new Date(member.created_at);
+    const now = new Date();
+    return createdAt.getMonth() === now.getMonth() && 
+           createdAt.getFullYear() === now.getFullYear();
+  }).length || 0;
+
+  if (isLoading) {
+    return <div>Loading staff data...</div>;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
@@ -25,7 +54,7 @@ const Staff = () => {
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
+            <div className="text-2xl font-bold">{staffMembers?.length || 0}</div>
             <p className="text-xs text-muted-foreground">Active members</p>
           </CardContent>
         </Card>
@@ -36,7 +65,7 @@ const Staff = () => {
             <UserPlus className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
+            <div className="text-2xl font-bold">{newThisMonth}</div>
             <p className="text-xs text-muted-foreground">Recent additions</p>
           </CardContent>
         </Card>
@@ -47,7 +76,7 @@ const Staff = () => {
             <ShieldCheck className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4</div>
+            <div className="text-2xl font-bold">3</div>
             <p className="text-xs text-muted-foreground">Permission levels</p>
           </CardContent>
         </Card>
@@ -58,7 +87,7 @@ const Staff = () => {
           <CardTitle>Current Staff Members</CardTitle>
         </CardHeader>
         <CardContent>
-          <StaffList />
+          <StaffList staffMembers={staffMembers} />
         </CardContent>
       </Card>
 

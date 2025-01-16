@@ -10,18 +10,71 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Egg, TrendingUp } from "lucide-react";
 import { AddEggCollectionForm } from "@/components/production/AddEggCollectionForm";
-
-const productionData = [
-  { date: "2024-02-01", total: 4500, gradeA: 3800, gradeB: 500, gradeC: 200 },
-  { date: "2024-02-02", total: 4600, gradeA: 3900, gradeB: 480, gradeC: 220 },
-  { date: "2024-02-03", total: 4550, gradeA: 3850, gradeB: 490, gradeC: 210 },
-  { date: "2024-02-04", total: 4700, gradeA: 4000, gradeB: 500, gradeC: 200 },
-  { date: "2024-02-05", total: 4650, gradeA: 3950, gradeB: 485, gradeC: 215 },
-  { date: "2024-02-06", total: 4800, gradeA: 4100, gradeB: 495, gradeC: 205 },
-  { date: "2024-02-07", total: 4750, gradeA: 4050, gradeB: 490, gradeC: 210 },
-];
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useSession } from "@supabase/auth-helpers-react";
+import { useQuery } from "@tanstack/react-query";
 
 const Production = () => {
+  const session = useSession();
+  const [realtimeData, setRealtimeData] = useState<any[]>([]);
+
+  const { data: productionData, isLoading } = useQuery({
+    queryKey: ['egg-production'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('egg_production')
+        .select(`
+          *,
+          batch:batches(name)
+        `)
+        .order('collection_date', { ascending: false })
+        .limit(7);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!session?.user?.id,
+  });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('egg-production-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'egg_production' },
+        (payload) => {
+          setRealtimeData((current) => {
+            const updated = [...current];
+            if (payload.eventType === 'INSERT') {
+              updated.unshift(payload.new);
+            }
+            return updated.slice(0, 7);
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const data = realtimeData.length > 0 ? realtimeData : productionData || [];
+  const todayProduction = data[0] || { quantity: 0, damaged: 0 };
+  const yesterdayProduction = data[1] || { quantity: 0 };
+  
+  const percentChange = yesterdayProduction.quantity 
+    ? ((todayProduction.quantity - yesterdayProduction.quantity) / yesterdayProduction.quantity * 100).toFixed(1)
+    : 0;
+
+  const gradeA = Math.floor(todayProduction.quantity * 0.85);
+  const layingRate = ((todayProduction.quantity / 5000) * 100).toFixed(1);
+
+  if (isLoading) {
+    return <div>Loading production data...</div>;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4">
@@ -43,10 +96,12 @@ const Production = () => {
             <Egg className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4,750</div>
+            <div className="text-2xl font-bold">{todayProduction.quantity}</div>
             <div className="flex items-center text-xs text-muted-foreground">
-              <TrendingUp className="h-3 w-3 text-green-500 mr-1" />
-              <span className="text-green-500">+2.1%</span> vs yesterday
+              <TrendingUp className={`h-3 w-3 ${Number(percentChange) >= 0 ? 'text-green-500' : 'text-red-500'} mr-1`} />
+              <span className={Number(percentChange) >= 0 ? 'text-green-500' : 'text-red-500'}>
+                {percentChange}%
+              </span> vs yesterday
             </div>
           </CardContent>
         </Card>
@@ -57,8 +112,8 @@ const Production = () => {
             <Egg className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">4,050</div>
-            <p className="text-xs text-muted-foreground">85.3% of total</p>
+            <div className="text-2xl font-bold">{gradeA}</div>
+            <p className="text-xs text-muted-foreground">85% of total</p>
           </CardContent>
         </Card>
 
@@ -68,7 +123,7 @@ const Production = () => {
             <Egg className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">92.4%</div>
+            <div className="text-2xl font-bold">{layingRate}%</div>
             <p className="text-xs text-muted-foreground">Current rate</p>
           </CardContent>
         </Card>
@@ -79,8 +134,10 @@ const Production = () => {
             <Egg className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">210</div>
-            <p className="text-xs text-muted-foreground">4.4% of total</p>
+            <div className="text-2xl font-bold">{todayProduction.damaged || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {((todayProduction.damaged || 0) / todayProduction.quantity * 100).toFixed(1)}% of total
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -92,10 +149,10 @@ const Production = () => {
         <CardContent>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={productionData}>
+              <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="collection_date" 
                   tickFormatter={(value) => new Date(value).toLocaleDateString()}
                 />
                 <YAxis />
@@ -104,17 +161,11 @@ const Production = () => {
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="total" 
+                  dataKey="quantity" 
                   stroke="#8B5CF6" 
                   strokeWidth={2}
                   dot={false}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="gradeA" 
-                  stroke="#0EA5E9" 
-                  strokeWidth={2}
-                  dot={false}
+                  name="Total Eggs"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -131,25 +182,23 @@ const Production = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
+                <TableHead>Batch</TableHead>
                 <TableHead>Total Production</TableHead>
-                <TableHead>Grade A</TableHead>
-                <TableHead>Grade B</TableHead>
-                <TableHead>Grade C</TableHead>
+                <TableHead>Damaged</TableHead>
                 <TableHead>Laying Rate</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {productionData.map((record) => (
-                <TableRow key={record.date} className="hover:bg-muted/50 transition-colors">
+              {data.map((record) => (
+                <TableRow key={record.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-mono">
-                    {new Date(record.date).toLocaleDateString()}
+                    {new Date(record.collection_date).toLocaleDateString()}
                   </TableCell>
-                  <TableCell className="font-mono">{record.total.toLocaleString()}</TableCell>
-                  <TableCell className="font-mono">{record.gradeA.toLocaleString()}</TableCell>
-                  <TableCell className="font-mono">{record.gradeB.toLocaleString()}</TableCell>
-                  <TableCell className="font-mono">{record.gradeC.toLocaleString()}</TableCell>
+                  <TableCell>{record.batch?.name}</TableCell>
+                  <TableCell className="font-mono">{record.quantity.toLocaleString()}</TableCell>
+                  <TableCell className="font-mono">{record.damaged || 0}</TableCell>
                   <TableCell className="font-mono">
-                    {((record.total / 5000) * 100).toFixed(1)}%
+                    {((record.quantity / 5000) * 100).toFixed(1)}%
                   </TableCell>
                 </TableRow>
               ))}
