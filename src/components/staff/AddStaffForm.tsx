@@ -16,6 +16,7 @@ import * as z from "zod";
 import { roles } from "./staffConfig";
 import { StaffFormFields } from "./StaffFormFields";
 import { UserPlus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -42,15 +43,37 @@ export function AddStaffForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    const roleDetails = roles[values.role];
-    toast({
-      title: "Staff Member Added",
-      description: `Added ${values.name} as ${roleDetails.title} with ${roleDetails.permissions.length} permissions.`,
-    });
-    setOpen(false);
-    form.reset();
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            full_name: values.name,
+            role: values.role,
+            // Add any other relevant fields
+          }
+        ])
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "Staff Member Added",
+        description: `Added ${values.name} as ${roles[values.role].title}`,
+      });
+      
+      setOpen(false);
+      form.reset();
+    } catch (error) {
+      console.error('Error adding staff member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add staff member. Please try again.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (

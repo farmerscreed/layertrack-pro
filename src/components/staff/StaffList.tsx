@@ -99,7 +99,7 @@ export function StaffList({ staffMembers = [], refetchStaff, isLoading = false }
             </TableRow>
           </TableHeader>
           <TableBody>
-            {staffMembers.length === 0 ? (
+            {!staffMembers || staffMembers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center text-muted-foreground">
                   No staff members found
