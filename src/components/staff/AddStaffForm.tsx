@@ -45,28 +45,27 @@ export function AddStaffForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      // First, create the user in Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // First, sign up the user with email and a temporary password
+      const tempPassword = Math.random().toString(36).slice(-12);
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: values.email,
-        password: crypto.randomUUID(), // Generate a random password
-        email_confirm: true,
-        user_metadata: {
-          full_name: values.name,
-          phone: values.phone,
-          department: values.department,
-        }
+        password: tempPassword,
+        options: {
+          data: {
+            full_name: values.name,
+            phone: values.phone,
+            department: values.department,
+          },
+        },
       });
 
-      if (authError) throw authError;
+      if (signUpError) throw signUpError;
+      if (!authData.user) throw new Error('Failed to create user');
 
-      if (!authData.user) {
-        throw new Error('Failed to create user');
-      }
-
-      // Then create the profile with the user's ID
+      // Update the profile with additional information
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ // Use update instead of insert since the trigger creates the initial record
+        .update({
           full_name: values.name,
           role: values.role,
         })
@@ -76,7 +75,7 @@ export function AddStaffForm() {
 
       toast({
         title: "Staff Member Added",
-        description: `Added ${values.name} as ${roles[values.role].title}. A welcome email has been sent.`,
+        description: `Added ${values.name} as ${roles[values.role].title}. They will receive an email to set their password.`,
       });
       
       setOpen(false);
@@ -85,7 +84,7 @@ export function AddStaffForm() {
       console.error('Error adding staff member:', error);
       toast({
         title: "Error",
-        description: "Failed to add staff member. Please try again.",
+        description: error.message || "Failed to add staff member. Please try again.",
         variant: "destructive",
       });
     }
