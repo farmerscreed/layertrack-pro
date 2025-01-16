@@ -45,23 +45,38 @@ export function AddStaffForm() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const { data: profile, error: profileError } = await supabase
+      // First, create the user in Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: values.email,
+        password: crypto.randomUUID(), // Generate a random password
+        email_confirm: true,
+        user_metadata: {
+          full_name: values.name,
+          phone: values.phone,
+          department: values.department,
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('Failed to create user');
+      }
+
+      // Then create the profile with the user's ID
+      const { error: profileError } = await supabase
         .from('profiles')
-        .insert([
-          {
-            full_name: values.name,
-            role: values.role,
-            // Add any other relevant fields
-          }
-        ])
-        .select()
-        .single();
+        .update({ // Use update instead of insert since the trigger creates the initial record
+          full_name: values.name,
+          role: values.role,
+        })
+        .eq('id', authData.user.id);
 
       if (profileError) throw profileError;
 
       toast({
         title: "Staff Member Added",
-        description: `Added ${values.name} as ${roles[values.role].title}`,
+        description: `Added ${values.name} as ${roles[values.role].title}. A welcome email has been sent.`,
       });
       
       setOpen(false);
