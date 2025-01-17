@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import AddStaffForm from "@/components/staff/AddStaffForm";
+import { AddStaffForm } from "@/components/staff/AddStaffForm";
 import StaffList from "@/components/staff/StaffList";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
