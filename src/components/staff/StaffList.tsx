@@ -45,26 +45,12 @@ export default function StaffList({ staff, onUpdate }: StaffListProps) {
 
       if (profileError) throw profileError;
 
-      // Then call our edge function to delete the auth user
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
+      // Call the edge function using Supabase's functions.invoke
+      const { error: deleteError } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${sessionData.session?.access_token}`,
-          },
-          body: JSON.stringify({ userId: id }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to delete user');
-      }
+      if (deleteError) throw deleteError;
       
       onUpdate();
       toast({
