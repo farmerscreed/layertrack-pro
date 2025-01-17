@@ -30,14 +30,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Profile fetch error:', error);
         throw error;
       }
       
-      console.log('User role fetched:', data?.role);
+      console.log('User role data:', data);
       return data?.role || null;
     } catch (error) {
       console.error('Error fetching user role:', error);
