@@ -46,27 +46,26 @@ const routeAccess = {
 };
 
 const AppContent = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const checkInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
-          console.error('Session error:', error);
+          console.error('Initial session check error:', error);
         }
-        // Even if there's an error, we want to stop loading
-        setIsLoading(false);
       } catch (error) {
-        console.error('Auth check error:', error);
-        setIsLoading(false);
+        console.error('Auth initialization error:', error);
+      } finally {
+        setIsInitializing(false);
       }
     };
 
-    checkSession();
+    checkInitialSession();
   }, []);
 
-  if (isLoading) {
+  if (isInitializing) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

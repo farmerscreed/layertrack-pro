@@ -26,9 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    const initializeAuth = async () => {
+    async function getInitialSession() {
       try {
-        console.log('Initializing auth...');
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -44,11 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (mounted) {
-          console.log('Setting initial session:', initialSession);
           setSession(initialSession);
+          setIsLoading(false);
           
           if (initialSession?.user) {
-            console.log('Fetching user role...');
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('role')
@@ -58,41 +56,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (profileError) {
               console.error('Profile fetch error:', profileError);
             } else {
-              console.log('User role:', profile?.role);
               setUserRole(profile?.role || null);
             }
           }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-      } finally {
         if (mounted) {
           setIsLoading(false);
         }
       }
-    };
+    }
 
-    initializeAuth();
+    getInitialSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      if (!mounted) return;
-
       console.log('Auth state changed:', event);
-      setSession(currentSession);
-
-      if (currentSession?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', currentSession.user.id)
-          .maybeSingle();
+      
+      if (mounted) {
+        setSession(currentSession);
         
-        setUserRole(profile?.role || null);
-      } else {
-        setUserRole(null);
+        if (currentSession?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', currentSession.user.id)
+            .maybeSingle();
+          
+          setUserRole(profile?.role || null);
+        } else {
+          setUserRole(null);
+        }
+        
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
     });
 
     return () => {
