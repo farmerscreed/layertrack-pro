@@ -21,7 +21,14 @@ import Staff from "./pages/dashboard/staff";
 import Settings from "./pages/dashboard/settings";
 import Analytics from "./pages/dashboard/analytics";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 // Define route access based on roles
 const routeAccess = {
@@ -47,6 +54,8 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Initialize dark mode from localStorage
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     document.documentElement.classList.toggle('dark', savedDarkMode);
@@ -55,34 +64,44 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          setIsAuthenticated(false);
-          setIsLoading(false);
+        if (sessionError) throw sessionError;
+
+        if (!session) {
+          if (mounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
           return;
         }
 
-        setIsAuthenticated(!!session);
+        if (mounted) {
+          setIsAuthenticated(true);
+        }
 
+        // Only fetch profile if we have a session
         if (session?.user) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
           
-          if (profileError) {
-            console.error('Profile error:', profileError);
-            setUserRole(null);
-          } else {
+          if (profileError) throw profileError;
+
+          if (mounted) {
             setUserRole(profile?.role || null);
           }
         }
-        setIsLoading(false);
       } catch (error) {
         console.error('Error checking session:', error);
-        setIsAuthenticated(false);
-        setIsLoading(false);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setUserRole(null);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -90,23 +109,46 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setIsAuthenticated(!!session);
-      if (session?.user) {
-        const { data: profile } = await supabase
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
+      if (event === 'SIGNED_OUT' || !session) {
+        setIsAuthenticated(false);
+        setUserRole(null);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsAuthenticated(true);
+
+      try {
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
         
-        setUserRole(profile?.role || null);
-      } else {
-        setUserRole(null);
+        if (profileError) throw profileError;
+        
+        if (mounted) {
+          setUserRole(profile?.role || null);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        if (mounted) {
+          setUserRole(null);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-      setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (isLoading) {
@@ -129,21 +171,38 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setInitialSession(session);
-      setIsLoading(false);
-    });
+    let mounted = true;
 
-    // Set up auth state listener
+    const initializeSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (mounted) {
+          setInitialSession(session);
+        }
+      } catch (error) {
+        console.error('Error initializing session:', error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeSession();
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setInitialSession(session);
-      setIsLoading(false);
+      if (mounted) {
+        setInitialSession(session);
+        setIsLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (isLoading) {
