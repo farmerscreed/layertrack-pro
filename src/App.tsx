@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import Landing from "./pages/Landing";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -43,6 +45,120 @@ const routeAccess = {
   "/dashboard/analytics": ["admin", "manager"],
 };
 
+const AppContent = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Session error:', error);
+        }
+        // Even if there's an error, we want to stop loading
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setIsLoading(false);
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute requiredRoles={routeAccess["/dashboard"]}>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route 
+            path="batches" 
+            element={
+              <ProtectedRoute requiredRoles={routeAccess["/dashboard/batches"]}>
+                <Batches />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="production" 
+            element={
+              <ProtectedRoute requiredRoles={routeAccess["/dashboard/production"]}>
+                <Production />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="health" 
+            element={
+              <ProtectedRoute requiredRoles={routeAccess["/dashboard/health"]}>
+                <Health />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="feed" 
+            element={
+              <ProtectedRoute requiredRoles={routeAccess["/dashboard/feed"]}>
+                <Feed />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="finance" 
+            element={
+              <ProtectedRoute requiredRoles={routeAccess["/dashboard/finance"]}>
+                <Finance />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="staff" 
+            element={
+              <ProtectedRoute requiredRoles={routeAccess["/dashboard/staff"]}>
+                <Staff />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="settings" 
+            element={
+              <ProtectedRoute requiredRoles={routeAccess["/dashboard/settings"]}>
+                <Settings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="analytics" 
+            element={
+              <ProtectedRoute requiredRoles={routeAccess["/dashboard/analytics"]}>
+                <Analytics />
+              </ProtectedRoute>
+            } 
+          />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+};
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -52,87 +168,7 @@ const App = () => {
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Landing />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute requiredRoles={routeAccess["/dashboard"]}>
-                        <DashboardLayout />
-                      </ProtectedRoute>
-                    }
-                  >
-                    <Route index element={<Dashboard />} />
-                    <Route 
-                      path="batches" 
-                      element={
-                        <ProtectedRoute requiredRoles={routeAccess["/dashboard/batches"]}>
-                          <Batches />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="production" 
-                      element={
-                        <ProtectedRoute requiredRoles={routeAccess["/dashboard/production"]}>
-                          <Production />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="health" 
-                      element={
-                        <ProtectedRoute requiredRoles={routeAccess["/dashboard/health"]}>
-                          <Health />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="feed" 
-                      element={
-                        <ProtectedRoute requiredRoles={routeAccess["/dashboard/feed"]}>
-                          <Feed />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="finance" 
-                      element={
-                        <ProtectedRoute requiredRoles={routeAccess["/dashboard/finance"]}>
-                          <Finance />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="staff" 
-                      element={
-                        <ProtectedRoute requiredRoles={routeAccess["/dashboard/staff"]}>
-                          <Staff />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="settings" 
-                      element={
-                        <ProtectedRoute requiredRoles={routeAccess["/dashboard/settings"]}>
-                          <Settings />
-                        </ProtectedRoute>
-                      } 
-                    />
-                    <Route 
-                      path="analytics" 
-                      element={
-                        <ProtectedRoute requiredRoles={routeAccess["/dashboard/analytics"]}>
-                          <Analytics />
-                        </ProtectedRoute>
-                      } 
-                    />
-                  </Route>
-                </Routes>
-              </BrowserRouter>
+              <AppContent />
             </TooltipProvider>
           </CurrencyProvider>
         </AuthProvider>

@@ -28,30 +28,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const initializeAuth = async () => {
       try {
-        // Get initial session
+        console.log('Initializing auth...');
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error('Session error:', sessionError);
-          toast({
-            title: "Authentication Error",
-            description: "There was a problem with your session. Please try logging in again.",
-            variant: "destructive",
-          });
+          if (mounted) {
+            toast({
+              title: "Authentication Error",
+              description: "There was a problem with your session. Please try logging in again.",
+              variant: "destructive",
+            });
+          }
           return;
         }
 
         if (mounted) {
+          console.log('Setting initial session:', initialSession);
           setSession(initialSession);
           
           if (initialSession?.user) {
-            const { data: profile } = await supabase
+            console.log('Fetching user role...');
+            const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('role')
               .eq('id', initialSession.user.id)
               .maybeSingle();
             
-            setUserRole(profile?.role || null);
+            if (profileError) {
+              console.error('Profile fetch error:', profileError);
+            } else {
+              console.log('User role:', profile?.role);
+              setUserRole(profile?.role || null);
+            }
           }
         }
       } catch (error) {
@@ -65,7 +74,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       if (!mounted) return;
 
