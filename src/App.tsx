@@ -49,12 +49,14 @@ const AppContent = () => {
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
+    console.log('Initializing app...');
     const checkInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Initial session check error:', error);
         }
+        console.log('Initial session check complete:', session ? 'session exists' : 'no session');
       } catch (error) {
         console.error('Auth initialization error:', error);
       } finally {

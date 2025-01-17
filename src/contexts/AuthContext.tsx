@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function getInitialSession() {
       try {
+        console.log('Getting initial session...');
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -38,15 +39,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               description: "There was a problem with your session. Please try logging in again.",
               variant: "destructive",
             });
+            setIsLoading(false);
           }
           return;
         }
 
         if (mounted) {
+          console.log('Initial session:', initialSession ? 'exists' : 'null');
           setSession(initialSession);
-          setIsLoading(false);
           
           if (initialSession?.user) {
+            console.log('Fetching user role for:', initialSession.user.id);
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('role')
@@ -56,14 +59,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (profileError) {
               console.error('Profile fetch error:', profileError);
             } else {
+              console.log('User role:', profile?.role);
               setUserRole(profile?.role || null);
             }
           }
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
         if (mounted) {
           setIsLoading(false);
+          toast({
+            title: "Error",
+            description: "Failed to initialize authentication. Please refresh the page.",
+            variant: "destructive",
+          });
         }
       }
     }
@@ -71,19 +81,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getInitialSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      console.log('Auth state changed:', event);
+      console.log('Auth state changed:', event, currentSession ? 'session exists' : 'no session');
       
       if (mounted) {
         setSession(currentSession);
         
         if (currentSession?.user) {
-          const { data: profile } = await supabase
+          console.log('Fetching updated user role');
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', currentSession.user.id)
             .maybeSingle();
           
-          setUserRole(profile?.role || null);
+          if (profileError) {
+            console.error('Profile fetch error on auth change:', profileError);
+          } else {
+            setUserRole(profile?.role || null);
+          }
         } else {
           setUserRole(null);
         }
@@ -96,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [toast]);
 
   return (
     <AuthContext.Provider value={{ session, isLoading, userRole }}>
