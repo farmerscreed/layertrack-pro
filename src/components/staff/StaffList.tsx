@@ -31,11 +31,40 @@ export default function StaffList({ staff, onUpdate }: StaffListProps) {
   const { toast } = useToast();
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.auth.admin.deleteUser(id);
-      if (error) throw error;
+      setIsDeleting(true);
+
+      // First delete the profile (this will cascade to related records)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
+
+      if (profileError) throw profileError;
+
+      // Then call our edge function to delete the auth user
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData.session?.access_token}`,
+          },
+          body: JSON.stringify({ userId: id }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete user');
+      }
       
       onUpdate();
       toast({
@@ -49,6 +78,8 @@ export default function StaffList({ staff, onUpdate }: StaffListProps) {
         description: error.message || "Failed to remove staff member",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -101,8 +132,12 @@ export default function StaffList({ staff, onUpdate }: StaffListProps) {
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
-                      Remove
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? "Removing..." : "Remove"}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -117,6 +152,7 @@ export default function StaffList({ staff, onUpdate }: StaffListProps) {
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => handleDelete(member.id)}
+                        disabled={isDeleting}
                       >
                         Continue
                       </AlertDialogAction>
