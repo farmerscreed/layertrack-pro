@@ -14,22 +14,42 @@ const Staff = () => {
   const navigate = useNavigate();
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
 
-  // Check authentication status
+  // Check authentication and session status
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) {
-        console.error("Session error:", error);
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          throw new Error("Authentication required");
+        }
+
+        // Check if user has admin role
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        if (!profile || profile.role !== 'admin') {
+          throw new Error("Unauthorized access");
+        }
+      } catch (error: any) {
+        console.error('Auth error:', error);
         toast({
-          title: "Authentication required",
-          description: "Please sign in to access this page",
+          title: "Access Denied",
+          description: error.message || "Please sign in with an admin account",
           variant: "destructive",
         });
         navigate("/login");
       }
     };
 
-    checkSession();
+    checkAuth();
 
     // Set up auth state listener
     const {
@@ -43,22 +63,33 @@ const Staff = () => {
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
 
-  // Fetch staff members
+  // Fetch staff members with error handling
   const { data: staffMembers, isLoading, error, refetch } = useQuery({
     queryKey: ["staff"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          throw new Error("Authentication required");
+        }
 
-      if (error) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        return data || [];
+      } catch (error: any) {
         console.error("Error fetching staff:", error);
         throw error;
       }
-
-      return data || [];
     },
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {
