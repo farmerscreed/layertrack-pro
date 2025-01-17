@@ -25,12 +25,11 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 5 * 60 * 1000,
     },
   },
 });
 
-// Define route access based on roles
 const routeAccess = {
   "/dashboard": ["admin", "manager", "worker"],
   "/dashboard/batches": ["admin", "manager", "worker"],
@@ -56,7 +55,6 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
   useEffect(() => {
     let mounted = true;
 
-    // Initialize dark mode from localStorage
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     document.documentElement.classList.toggle('dark', savedDarkMode);
 
@@ -64,7 +62,14 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          if (mounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
+          return;
+        }
 
         if (!session) {
           if (mounted) {
@@ -78,7 +83,6 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
           setIsAuthenticated(true);
         }
 
-        // Only fetch profile if we have a session
         if (session?.user) {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
@@ -86,10 +90,18 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
             .eq('id', session.user.id)
             .maybeSingle();
           
-          if (profileError) throw profileError;
+          if (profileError) {
+            console.error('Profile error:', profileError);
+            if (mounted) {
+              setUserRole(null);
+              setIsLoading(false);
+            }
+            return;
+          }
 
           if (mounted) {
             setUserRole(profile?.role || null);
+            setIsLoading(false);
           }
         }
       } catch (error) {
@@ -97,9 +109,6 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
         if (mounted) {
           setIsAuthenticated(false);
           setUserRole(null);
-        }
-      } finally {
-        if (mounted) {
           setIsLoading(false);
         }
       }
@@ -128,8 +137,14 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
           .eq('id', session.user.id)
           .maybeSingle();
         
-        if (profileError) throw profileError;
-        
+        if (profileError) {
+          console.error('Profile error:', profileError);
+          if (mounted) {
+            setUserRole(null);
+          }
+          return;
+        }
+
         if (mounted) {
           setUserRole(profile?.role || null);
         }
@@ -152,7 +167,11 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
   }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -206,7 +225,11 @@ const App = () => {
   }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
