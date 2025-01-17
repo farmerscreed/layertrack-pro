@@ -27,7 +27,11 @@ const formSchema = z.object({
   startDate: z.string(),
 });
 
-export function AddStaffForm() {
+interface AddStaffFormProps {
+  onSuccess?: () => void;
+}
+
+export function AddStaffForm({ onSuccess }: AddStaffFormProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
 
@@ -80,6 +84,7 @@ export function AddStaffForm() {
       
       setOpen(false);
       form.reset();
+      onSuccess?.();
     } catch (error) {
       console.error('Error adding staff member:', error);
       toast({
