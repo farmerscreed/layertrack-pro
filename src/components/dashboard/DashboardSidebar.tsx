@@ -25,9 +25,10 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
   {
@@ -90,29 +91,16 @@ export function DashboardSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const { userRole } = useAuth();
 
-  useEffect(() => {
-    const getUserRole = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        setUserRole(profile?.role || null);
-      }
-    };
-
-    getUserRole();
-  }, []);
+  console.log('Current user role:', userRole);
 
   // Filter menu items based on user role
   const filteredMenuItems = menuItems.filter(
     item => userRole && item.roles.includes(userRole)
   );
+
+  console.log('Filtered menu items:', filteredMenuItems);
 
   const handleSignOut = async () => {
     try {
