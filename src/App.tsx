@@ -58,7 +58,7 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     document.documentElement.classList.toggle('dark', savedDarkMode);
 
-    const checkSession = async () => {
+    const initializeAuth = async () => {
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
@@ -72,6 +72,17 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
         }
 
         if (!session) {
+          if (mounted) {
+            setIsAuthenticated(false);
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        // Refresh session to ensure token is valid
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.error('Session refresh error:', refreshError);
           if (mounted) {
             setIsAuthenticated(false);
             setIsLoading(false);
@@ -105,7 +116,7 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
           }
         }
       } catch (error) {
-        console.error('Error checking session:', error);
+        console.error('Error initializing auth:', error);
         if (mounted) {
           setIsAuthenticated(false);
           setUserRole(null);
@@ -114,7 +125,7 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
       }
     };
 
-    checkSession();
+    initializeAuth();
 
     const {
       data: { subscription },
@@ -194,7 +205,12 @@ const App = () => {
 
     const initializeSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+          return;
+        }
+        
         if (mounted) {
           setInitialSession(session);
         }
