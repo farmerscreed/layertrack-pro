@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -10,54 +10,54 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import { roles } from "./staffConfig";
-import { StaffUpdateDialog } from "./StaffUpdateDialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import StaffUpdateDialog from "./StaffUpdateDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
-export function StaffList({ staffMembers, refetchStaff }: { staffMembers: any[]; refetchStaff: () => void }) {
-  const [loading, setLoading] = useState(false);
+interface StaffListProps {
+  staff: Array<{
+    id: string;
+    full_name: string;
+    role: string;
+    email_notifications?: boolean;
+    push_notifications?: boolean;
+    mobile_alerts?: boolean;
+    currency_preference?: string;
+  }>;
+  onUpdate: () => void;
+}
+
+export default function StaffList({ staff, onUpdate }: StaffListProps) {
   const { toast } = useToast();
+  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
 
-  const handleDelete = async (userId: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      setLoading(true);
+      const { error } = await supabase.auth.admin.deleteUser(id);
+      if (error) throw error;
       
-      // First, delete all related transactions
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('user_id', userId);
-
-      if (transactionError) throw transactionError;
-
-      // Then delete the profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (profileError) throw profileError;
-
+      onUpdate();
       toast({
-        title: "Staff member deleted",
-        description: "The staff member has been removed successfully.",
+        title: "Success",
+        description: "Staff member removed successfully",
       });
-      
-      refetchStaff();
     } catch (error: any) {
-      console.error('Error deleting staff member:', error);
+      console.error("Error deleting staff member:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete staff member",
+        description: error.message || "Failed to remove staff member",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (!staffMembers) {
-    return <div>No staff members found.</div>;
+  if (!staff || staff.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No staff members found.
+      </div>
+    );
   }
 
   return (
@@ -66,27 +66,63 @@ export function StaffList({ staffMembers, refetchStaff }: { staffMembers: any[];
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {staffMembers.map((member) => (
+          {staff.map((member) => (
             <TableRow key={member.id}>
               <TableCell>{member.full_name}</TableCell>
-              <TableCell>{member.email}</TableCell>
-              <TableCell>{roles[member.role]?.title || member.role}</TableCell>
+              <TableCell className="capitalize">{member.role}</TableCell>
               <TableCell className="text-right space-x-2">
-                <StaffUpdateDialog staff={member} onUpdate={refetchStaff} />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => handleDelete(member.id)}
-                  disabled={loading}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedMember(member)}
+                    >
+                      Edit
+                    </Button>
+                  </DialogTrigger>
+                  {selectedMember && (
+                    <DialogContent>
+                      <StaffUpdateDialog
+                        staffMember={selectedMember}
+                        onSuccess={() => {
+                          setIsUpdateDialogOpen(false);
+                          onUpdate();
+                        }}
+                      />
+                    </DialogContent>
+                  )}
+                </Dialog>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm">
+                      Remove
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the
+                        staff member's account and remove their access to the system.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDelete(member.id)}
+                      >
+                        Continue
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </TableCell>
             </TableRow>
           ))}
