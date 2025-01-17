@@ -14,24 +14,16 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Check for existing session on component mount
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        console.log("Existing session found, redirecting to dashboard");
         navigate('/dashboard');
       }
-    });
-
-    // Set up auth state listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        navigate('/dashboard');
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    };
+    checkSession();
   }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -39,28 +31,29 @@ const Login = () => {
     setLoading(true);
     
     try {
-      console.log("Attempting login with:", { email }); // Debug log
+      console.log("Attempting login with:", { email });
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(), // Normalize email
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (error) {
-        console.error("Login error:", error); // Debug log
+        console.error("Login error:", error);
         throw error;
       }
 
       if (data?.user) {
-        console.log("Login successful:", data.user); // Debug log
+        console.log("Login successful:", data.user);
         toast({
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-        navigate('/dashboard');
+        // Force navigation to dashboard after successful login
+        navigate('/dashboard', { replace: true });
       }
     } catch (error: any) {
-      console.error("Login error details:", error); // Debug log
+      console.error("Login error details:", error);
       toast({
         title: "Login failed",
         description: error.message || "Please check your email and password and try again.",
