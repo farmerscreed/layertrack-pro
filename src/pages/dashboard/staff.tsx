@@ -13,9 +13,12 @@ const Staff = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isAddStaffOpen, setIsAddStaffOpen] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   // Check authentication and session status
   useEffect(() => {
+    let mounted = true;
+
     const checkAuth = async () => {
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -38,6 +41,10 @@ const Staff = () => {
         if (!profile || profile.role !== 'admin') {
           throw new Error("Unauthorized access");
         }
+
+        if (mounted) {
+          setIsAuthorized(true);
+        }
       } catch (error: any) {
         console.error('Auth error:', error);
         toast({
@@ -56,11 +63,19 @@ const Staff = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
-        navigate("/login");
+        if (mounted) {
+          setIsAuthorized(false);
+          navigate("/login");
+        }
+      } else {
+        checkAuth();
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
 
   // Fetch staff members with error handling
@@ -68,8 +83,8 @@ const Staff = () => {
     queryKey: ["staff"],
     queryFn: async () => {
       try {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session.session) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           throw new Error("Authentication required");
         }
 
@@ -90,7 +105,16 @@ const Staff = () => {
     },
     retry: 1,
     refetchOnWindowFocus: false,
+    enabled: isAuthorized, // Only fetch when user is authorized
   });
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
