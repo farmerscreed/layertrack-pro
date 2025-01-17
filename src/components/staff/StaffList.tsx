@@ -10,11 +10,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, UserCog } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { roles } from "./staffConfig";
 import { StaffUpdateDialog } from "./StaffUpdateDialog";
 
-export function StaffList({ staff, onUpdate }: { staff: any[]; onUpdate: () => void }) {
+export function StaffList({ staffMembers, refetchStaff }: { staffMembers: any[]; refetchStaff: () => void }) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -38,18 +38,13 @@ export function StaffList({ staff, onUpdate }: { staff: any[]; onUpdate: () => v
 
       if (profileError) throw profileError;
 
-      // Finally delete the auth user
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-
-      if (authError) throw authError;
-
       toast({
         title: "Staff member deleted",
         description: "The staff member has been removed successfully.",
       });
       
-      onUpdate();
-    } catch (error) {
+      refetchStaff();
+    } catch (error: any) {
       console.error('Error deleting staff member:', error);
       toast({
         title: "Error",
@@ -61,6 +56,10 @@ export function StaffList({ staff, onUpdate }: { staff: any[]; onUpdate: () => v
     }
   };
 
+  if (!staffMembers) {
+    return <div>No staff members found.</div>;
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -69,19 +68,17 @@ export function StaffList({ staff, onUpdate }: { staff: any[]; onUpdate: () => v
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
-            <TableHead>Department</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {staff.map((member) => (
+          {staffMembers.map((member) => (
             <TableRow key={member.id}>
               <TableCell>{member.full_name}</TableCell>
               <TableCell>{member.email}</TableCell>
               <TableCell>{roles[member.role]?.title || member.role}</TableCell>
-              <TableCell>{member.department}</TableCell>
               <TableCell className="text-right space-x-2">
-                <StaffUpdateDialog member={member} onUpdate={onUpdate} />
+                <StaffUpdateDialog staff={member} onUpdate={refetchStaff} />
                 <Button
                   variant="destructive"
                   size="icon"
