@@ -126,12 +126,29 @@ const ProtectedRoute = ({ children, requiredRoles = [] }: ProtectedRouteProps) =
 
 const App = () => {
   const [initialSession, setInitialSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setInitialSession(session);
+      setIsLoading(false);
     });
+
+    // Set up auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setInitialSession(session);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
