@@ -30,18 +30,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
       
       if (profileError) {
         console.error('Profile fetch error:', profileError);
-        return null;
+        throw profileError;
       }
       
       console.log('User role fetched:', profile?.role);
-      return profile?.role || null;
+      return profile?.role || 'worker'; // Default to 'worker' if no role is set
     } catch (error) {
       console.error('Error fetching user role:', error);
-      return null;
+      return 'worker'; // Default to 'worker' on error
     }
   };
 
@@ -58,14 +58,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (mounted) {
-          console.log('Setting initial session:', initialSession ? 'exists' : 'null');
-          setSession(initialSession);
-          
           if (initialSession?.user) {
+            console.log('Setting initial session:', initialSession.user.email);
+            setSession(initialSession);
             const role = await fetchUserRole(initialSession.user.id);
             setUserRole(role);
+          } else {
+            console.log('No initial session found');
           }
-          
           setIsLoading(false);
         }
       } catch (error) {
