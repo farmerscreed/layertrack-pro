@@ -23,46 +23,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const fetchUserRole = async (userId: string) => {
+    try {
+      console.log('Fetching user role for:', userId);
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        return null;
+      }
+      
+      console.log('User role fetched:', profile?.role);
+      return profile?.role || null;
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
-    async function getInitialSession() {
+    const initializeAuth = async () => {
       try {
-        console.log('Getting initial session...');
+        console.log('Initializing authentication...');
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error('Session error:', sessionError);
-          if (mounted) {
-            toast({
-              title: "Authentication Error",
-              description: "There was a problem with your session. Please try logging in again.",
-              variant: "destructive",
-            });
-            setIsLoading(false);
-          }
-          return;
+          throw sessionError;
         }
 
         if (mounted) {
-          console.log('Initial session:', initialSession ? 'exists' : 'null');
+          console.log('Setting initial session:', initialSession ? 'exists' : 'null');
           setSession(initialSession);
           
           if (initialSession?.user) {
-            console.log('Fetching user role for:', initialSession.user.id);
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', initialSession.user.id)
-              .maybeSingle();
-            
-            if (profileError) {
-              console.error('Profile fetch error:', profileError);
-            } else {
-              console.log('User role:', profile?.role);
-              setUserRole(profile?.role || null);
-            }
+            const role = await fetchUserRole(initialSession.user.id);
+            setUserRole(role);
           }
+          
           setIsLoading(false);
         }
       } catch (error) {
@@ -76,9 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         }
       }
-    }
+    };
 
-    getInitialSession();
+    initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log('Auth state changed:', event, currentSession ? 'session exists' : 'no session');
@@ -87,18 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(currentSession);
         
         if (currentSession?.user) {
-          console.log('Fetching updated user role');
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', currentSession.user.id)
-            .maybeSingle();
-          
-          if (profileError) {
-            console.error('Profile fetch error on auth change:', profileError);
-          } else {
-            setUserRole(profile?.role || null);
-          }
+          const role = await fetchUserRole(currentSession.user.id);
+          setUserRole(role);
         } else {
           setUserRole(null);
         }
@@ -113,8 +106,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [toast]);
 
+  const value = {
+    session,
+    isLoading,
+    userRole,
+  };
+
   return (
-    <AuthContext.Provider value={{ session, isLoading, userRole }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
