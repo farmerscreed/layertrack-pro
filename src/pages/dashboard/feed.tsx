@@ -44,42 +44,56 @@ const Feed = () => {
     }
   });
 
+  const { data: farmSettings } = useQuery({
+    queryKey: ['farm_settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('farm_settings')
+        .select('feed_threshold_days')
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const calculateMetrics = () => {
     if (!feedInventory?.length) return {
       currentStock: 0,
       dailyConsumption: 0,
       lastPurchaseCost: 0,
-      stockStatus: "No data"
+      stockStatus: "No data",
+      daysRemaining: 0
     };
 
     const totalStock = feedInventory.reduce((sum, record) => sum + record.quantity_kg, 0);
     const lastRecord = feedInventory[0];
     
-    // Calculate average daily consumption from the last 7 days
-    const last7DaysConsumption = feedConsumption
-      ?.filter(record => {
-        const date = new Date(record.consumption_date);
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        return date >= sevenDaysAgo;
-      })
-      .reduce((sum, record) => sum + Number(record.quantity_kg), 0) || 0;
+    // Calculate historical consumption patterns
+    const consumptionByDate = new Map();
+    feedConsumption?.forEach(record => {
+      const date = record.consumption_date;
+      const currentTotal = consumptionByDate.get(date) || 0;
+      consumptionByDate.set(date, currentTotal + Number(record.quantity_kg));
+    });
 
-    const averageConsumption = last7DaysConsumption / 7;
+    // Get unique dates and calculate average daily consumption
+    const uniqueDates = Array.from(consumptionByDate.keys());
+    const totalConsumption = Array.from(consumptionByDate.values()).reduce((sum, qty) => sum + qty, 0);
+    const averageConsumption = uniqueDates.length > 0 ? totalConsumption / uniqueDates.length : 0;
 
-    // Calculate days of feed remaining
+    // Calculate days of feed remaining using the configurable threshold
     const daysRemaining = averageConsumption > 0 ? Math.floor(totalStock / averageConsumption) : 0;
+    const thresholdDays = farmSettings?.feed_threshold_days ?? 7; // Default to 7 if not set
 
     return {
       currentStock: totalStock,
       dailyConsumption: averageConsumption,
       lastPurchaseCost: lastRecord?.cost_per_kg || 0,
-      stockStatus: daysRemaining < 7 ? "Low" : "Adequate",
+      stockStatus: daysRemaining < thresholdDays ? "Low" : "Adequate",
       daysRemaining
     };
   };
-
-  const metrics = calculateMetrics();
 
   if (isLoadingInventory || isLoadingConsumption) {
     return (
@@ -88,6 +102,8 @@ const Feed = () => {
       </div>
     );
   }
+
+  const metrics = calculateMetrics();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -111,7 +127,8 @@ const Feed = () => {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Low Feed Stock Alert</AlertTitle>
           <AlertDescription>
-            Current feed stock will last approximately {metrics.daysRemaining} days based on recent consumption patterns. Consider restocking soon.
+            Current feed stock will last approximately {metrics.daysRemaining} days based on historical consumption patterns. 
+            Your threshold is set to {farmSettings?.feed_threshold_days ?? 7} days. Consider restocking soon.
           </AlertDescription>
         </Alert>
       )}

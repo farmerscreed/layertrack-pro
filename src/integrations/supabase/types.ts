@@ -222,6 +222,7 @@ export type Database = {
           address: string | null
           created_at: string
           farm_name: string
+          feed_threshold_days: number
           id: string
           registration_number: string | null
           updated_at: string
@@ -231,6 +232,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           farm_name: string
+          feed_threshold_days?: number
           id?: string
           registration_number?: string | null
           updated_at?: string
@@ -240,6 +242,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           farm_name?: string
+          feed_threshold_days?: number
           id?: string
           registration_number?: string | null
           updated_at?: string
