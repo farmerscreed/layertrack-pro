@@ -12,6 +12,7 @@ export const FarmSettings = () => {
   const [farmName, setFarmName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [address, setAddress] = useState("");
+  const [feedThresholdDays, setFeedThresholdDays] = useState("7"); // Default to 7 days
 
   useEffect(() => {
     const loadFarmSettings = async () => {
@@ -20,7 +21,7 @@ export const FarmSettings = () => {
         const { data: farmSettings, error } = await supabase
           .from("farm_settings")
           .select("*")
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
@@ -28,9 +29,11 @@ export const FarmSettings = () => {
           setFarmName(farmSettings.farm_name);
           setRegistrationNumber(farmSettings.registration_number || "");
           setAddress(farmSettings.address || "");
+          setFeedThresholdDays(farmSettings.feed_threshold_days?.toString() || "7");
         }
       } catch (error) {
         console.error("Error loading farm settings:", error);
+        toast.error("Failed to load farm settings");
       } finally {
         setLoading(false);
       }
@@ -44,7 +47,6 @@ export const FarmSettings = () => {
     try {
       setLoading(true);
 
-      // Get the current user's ID
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!user) throw new Error("No user found");
@@ -52,18 +54,21 @@ export const FarmSettings = () => {
       const { data: existingSettings } = await supabase
         .from("farm_settings")
         .select("id")
-        .single();
+        .maybeSingle();
+
+      const settingsData = {
+        farm_name: farmName,
+        registration_number: registrationNumber,
+        address,
+        feed_threshold_days: parseInt(feedThresholdDays),
+        updated_at: new Date().toISOString(),
+      };
 
       if (existingSettings) {
         // Update existing settings
         const { error } = await supabase
           .from("farm_settings")
-          .update({
-            farm_name: farmName,
-            registration_number: registrationNumber,
-            address,
-            updated_at: new Date().toISOString(),
-          })
+          .update(settingsData)
           .eq("id", existingSettings.id);
 
         if (error) throw error;
@@ -72,10 +77,8 @@ export const FarmSettings = () => {
         const { error } = await supabase
           .from("farm_settings")
           .insert({
+            ...settingsData,
             user_id: user.id,
-            farm_name: farmName,
-            registration_number: registrationNumber,
-            address,
           });
 
         if (error) throw error;
@@ -130,6 +133,19 @@ export const FarmSettings = () => {
                 placeholder="Farm location"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="feedThresholdDays">Feed Stock Alert Threshold (days)</Label>
+              <Input
+                id="feedThresholdDays"
+                type="number"
+                min="1"
+                max="90"
+                placeholder="Days of feed stock before alert"
+                value={feedThresholdDays}
+                onChange={(e) => setFeedThresholdDays(e.target.value)}
+                required
               />
             </div>
           </div>
