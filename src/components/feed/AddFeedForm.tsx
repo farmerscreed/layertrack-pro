@@ -25,10 +25,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
-  quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
+  numberOfBags: z.coerce.number().min(1, "Number of bags must be at least 1"),
+  bagSize: z.coerce.number().min(1, "Bag size must be at least 1"),
   type: z.string().min(2, "Feed type must be at least 2 characters"),
   supplier: z.string().min(2, "Supplier must be at least 2 characters"),
-  cost: z.coerce.number().min(0, "Cost must be non-negative"),
+  costPerBag: z.coerce.number().min(0, "Cost must be non-negative"),
   date: z.string(),
 });
 
@@ -40,13 +41,22 @@ export function AddFeedForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      quantity: 0,
+      numberOfBags: 0,
+      bagSize: 50, // Default bag size of 50kg
       type: "",
       supplier: "",
-      cost: 0,
+      costPerBag: 0,
       date: new Date().toISOString().split("T")[0],
     },
   });
+
+  const calculateTotalQuantity = (numberOfBags: number, bagSize: number) => {
+    return numberOfBags * bagSize;
+  };
+
+  const calculateCostPerKg = (costPerBag: number, bagSize: number) => {
+    return costPerBag / bagSize;
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -57,15 +67,18 @@ export function AddFeedForm() {
         throw new Error("User not authenticated");
       }
 
+      const totalQuantityKg = calculateTotalQuantity(values.numberOfBags, values.bagSize);
+      const costPerKg = calculateCostPerKg(values.costPerBag, values.bagSize);
+
       // Create feed inventory record
       const { data: feedData, error: feedError } = await supabase
         .from('feed_inventory')
         .insert({
           user_id: userId,
           feed_type: values.type,
-          quantity_kg: values.quantity,
+          quantity_kg: totalQuantityKg,
           purchase_date: values.date,
-          cost_per_kg: values.cost,
+          cost_per_kg: costPerKg,
           supplier: values.supplier,
         })
         .select()
@@ -80,10 +93,10 @@ export function AddFeedForm() {
           user_id: userId,
           type: 'expense',
           category: 'feed',
-          amount: values.quantity * values.cost,
-          quantity: values.quantity,
-          unit_cost: values.cost,
-          description: `Purchased ${values.quantity}kg of ${values.type} feed from ${values.supplier}`,
+          amount: values.numberOfBags * values.costPerBag,
+          quantity: totalQuantityKg,
+          unit_cost: costPerKg,
+          description: `Purchased ${values.numberOfBags} bags (${values.bagSize}kg each) of ${values.type} feed from ${values.supplier}`,
           payment_method: 'cash',
           created_at: new Date(values.date).toISOString(),
           feed_inventory_id: feedData.id,
@@ -93,13 +106,12 @@ export function AddFeedForm() {
 
       toast({
         title: "Feed Record Added",
-        description: `Added ${values.quantity}kg of ${values.type} feed.`,
+        description: `Added ${values.numberOfBags} bags (${totalQuantityKg}kg total) of ${values.type} feed.`,
       });
       
       setOpen(false);
       form.reset();
       
-      // Invalidate both feed and transaction queries
       queryClient.invalidateQueries({ queryKey: ['feed_inventory'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
     } catch (error) {
@@ -130,10 +142,23 @@ export function AddFeedForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="quantity"
+              name="numberOfBags"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantity (kg)</FormLabel>
+                  <FormLabel>Number of Bags</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="bagSize"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bag Size (kg)</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -169,10 +194,10 @@ export function AddFeedForm() {
             />
             <FormField
               control={form.control}
-              name="cost"
+              name="costPerBag"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cost per kg</FormLabel>
+                  <FormLabel>Cost per Bag</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" {...field} />
                   </FormControl>
